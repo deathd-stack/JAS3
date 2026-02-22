@@ -1,64 +1,50 @@
-document.getElementById("fileInput").addEventListener("change", function (event) {
-  const file = event.target.files[0];
-  if (!file) return;
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+}
 
-  const reader = new FileReader();
+.header {
+    background: #e74c3c;
+    color: white;
+    text-align: center;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: bold;
+}
 
-  reader.onload = function (e) {
-    const text = e.target.result;
-    const lines = text.split("\n");
-    const groupsDiv = document.getElementById("groups");
-    groupsDiv.innerHTML = "";
+input[type="file"] {
+    display: block;
+    margin: 15px auto;
+    font-size: 16px;
+}
 
-    const groups = {};
+.group-title {
+    background: #f1c40f;
+    margin: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}
 
-    lines.forEach(line => {
+.flight-card {
+    background: white;
+    margin: 10px 15px;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 18px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s;
+}
 
-      const flightMatch = line.match(/(7C\d{3,4}|HL\d{3,4})/g);
-      const timeMatch = line.match(/\b\d{2}:\d{2}\b/g);
-      const groupMatch = line.match(/\d+조/);
+.flight-card:active {
+    transform: scale(0.97);
+}
 
-      if (!flightMatch || !timeMatch) return;
-
-      const groupName = groupMatch ? groupMatch[0] : "기타";
-
-      if (!groups[groupName]) {
-        groups[groupName] = [];
-      }
-
-      flightMatch.forEach((flight, index) => {
-        const time = timeMatch[index] || timeMatch[0];
-        groups[groupName].push({ flight, time });
-      });
-
-    });
-
-    for (let group in groups) {
-
-      const groupDiv = document.createElement("div");
-      groupDiv.className = "group";
-
-      const title = document.createElement("h3");
-      title.textContent = group;
-      groupDiv.appendChild(title);
-
-      groups[group].forEach(item => {
-
-        const scheduleDiv = document.createElement("div");
-        scheduleDiv.className = "schedule";
-        scheduleDiv.textContent = item.flight + " / " + item.time;
-
-        scheduleDiv.addEventListener("click", function () {
-          scheduleDiv.classList.toggle("saved");
-        });
-
-        groupDiv.appendChild(scheduleDiv);
-      });
-
-      groupsDiv.appendChild(groupDiv);
-    }
-
-  };
-
-  reader.readAsText(file);
-});
+.flight-card.selected {
+    background: #2ecc71;
+    color: white;
+}
