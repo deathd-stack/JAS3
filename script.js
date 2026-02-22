@@ -1,50 +1,63 @@
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f4f4;
-}
+document.getElementById("fileInput").addEventListener("change", function (event) {
 
-.header {
-    background: #e74c3c;
-    color: white;
-    text-align: center;
-    padding: 18px;
-    font-size: 20px;
-    font-weight: bold;
-}
+    const file = event.target.files[0];
+    if (!file) return;
 
-input[type="file"] {
-    display: block;
-    margin: 15px auto;
-    font-size: 16px;
-}
+    const reader = new FileReader();
 
-.group-title {
-    background: #f1c40f;
-    margin: 15px;
-    padding: 12px;
-    border-radius: 10px;
-    font-size: 18px;
-    font-weight: bold;
-    text-align: center;
-}
+    reader.onload = function (e) {
 
-.flight-card {
-    background: white;
-    margin: 10px 15px;
-    padding: 18px;
-    border-radius: 12px;
-    font-size: 18px;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-    cursor: pointer;
-    transition: 0.2s;
-}
+        const text = e.target.result;
+        const lines = text.split("\n");
 
-.flight-card:active {
-    transform: scale(0.97);
-}
+        const groupsDiv = document.getElementById("groups");
+        groupsDiv.innerHTML = "";
 
-.flight-card.selected {
-    background: #2ecc71;
-    color: white;
-}
+        const groups = {};
+
+        lines.forEach(line => {
+
+            const parts = line.split(",");
+
+            if (parts.length < 3) return;
+
+            const groupName = parts[0].trim();
+            const flight = parts[1].trim();
+            const time = parts[2].trim();
+
+            if (!groups[groupName]) {
+                groups[groupName] = [];
+            }
+
+            groups[groupName].push({ flight, time });
+
+        });
+
+        for (let group in groups) {
+
+            const title = document.createElement("div");
+            title.className = "group-title";
+            title.innerText = group;
+            groupsDiv.appendChild(title);
+
+            groups[group].forEach(item => {
+
+                const card = document.createElement("div");
+                card.className = "flight-card";
+                card.innerHTML = `
+                    <div><strong>${item.flight}</strong></div>
+                    <div>${item.time}</div>
+                `;
+
+                card.addEventListener("click", function () {
+                    card.classList.toggle("selected");
+                });
+
+                groupsDiv.appendChild(card);
+
+            });
+        }
+    };
+
+    reader.readAsText(file);
+});
