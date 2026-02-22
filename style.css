@@ -1,0 +1,40 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+}
+
+header {
+  background: #e74c3c;
+  color: white;
+  text-align: center;
+  padding: 15px;
+  font-size: 20px;
+}
+
+.container {
+  padding: 20px;
+}
+
+.group {
+  background: white;
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.group h3 {
+  margin: 0 0 10px 0;
+}
+
+.schedule {
+  padding: 5px;
+  margin: 5px 0;
+  background: #eee;
+  cursor: pointer;
+}
+
+.schedule.saved {
+  background: #2ecc71;
+  color: white;
+}
