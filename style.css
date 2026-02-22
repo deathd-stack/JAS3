@@ -1,40 +1,50 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f4f4f4;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
 }
 
-header {
-  background: #e74c3c;
-  color: white;
-  text-align: center;
-  padding: 15px;
-  font-size: 20px;
+.header {
+    background: #e74c3c;
+    color: white;
+    text-align: center;
+    padding: 18px;
+    font-size: 20px;
+    font-weight: bold;
 }
 
-.container {
-  padding: 20px;
+input[type="file"] {
+    display: block;
+    margin: 15px auto;
+    font-size: 16px;
 }
 
-.group {
-  background: white;
-  margin-bottom: 15px;
-  padding: 10px;
-  border-radius: 5px;
+.group-title {
+    background: #f1c40f;
+    margin: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
 }
 
-.group h3 {
-  margin: 0 0 10px 0;
+.flight-card {
+    background: white;
+    margin: 10px 15px;
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 18px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: 0.2s;
 }
 
-.schedule {
-  padding: 5px;
-  margin: 5px 0;
-  background: #eee;
-  cursor: pointer;
+.flight-card:active {
+    transform: scale(0.97);
 }
 
-.schedule.saved {
-  background: #2ecc71;
-  color: white;
+.flight-card.selected {
+    background: #2ecc71;
+    color: white;
 }
