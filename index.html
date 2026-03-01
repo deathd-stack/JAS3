@@ -3,19 +3,181 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JAS 운영 시스템</title>
-<link rel="stylesheet" href="style.css">
+<title>JAS MEMO VER.1</title>
+
+<style>
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+  background:#ff8c00;
+}
+header{
+  text-align:center;
+  padding:18px;
+  font-size:20px;
+  font-weight:bold;
+  color:white;
+}
+.container{ padding:16px; }
+
+button{
+  width:100%;
+  padding:14px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+}
+.memoBtn{ background:white; color:#ff8c00; }
+
+.memoCard{
+  padding:14px;
+  border-radius:12px;
+  margin-top:10px;
+}
+.white{ background:white; color:black; }
+.black{ background:black; color:white; }
+
+.modal{
+  position:fixed;
+  left:0; right:0; bottom:0;
+  background:white;
+  border-radius:20px 20px 0 0;
+  padding:16px;
+}
+.hidden{ display:none; }
+
+.row{ display:flex; gap:8px; }
+.row input{ flex:1; }
+
+input{
+  padding:6px;
+  margin:4px 0;
+  width:100%;
+}
+
+.bottomRow{
+  display:flex;
+  gap:12px;
+  margin-top:10px;
+}
+.bottomRow div{ flex:1; }
+
+label{ font-size:13px; }
+</style>
 </head>
+
 <body>
 
-<div class="header">
-    JAS 운영 시스템
+<header>JAS MEMO VER.1</header>
+
+<div class="container">
+<button class="memoBtn" onclick="newMemo()">메모 추가</button>
+<div id="memoList"></div>
 </div>
 
-<input type="file" id="fileInput" accept=".csv">
+<div id="editor" class="modal hidden"></div>
 
-<div id="groups"></div>
+<script>
+let memos = JSON.parse(localStorage.getItem("memos")||"[]");
+let editIndex=null;
 
-<script src="script.js"></script>
+function num(el,n){
+  el.value = el.value.replace(/[^0-9]/g,"").slice(0,n);
+}
+
+function render(){
+  memoList.innerHTML="";
+  memos.forEach((m,i)=>{
+    const even = parseInt(m.c7)%2===0;
+    memoList.innerHTML+=`
+    <div class="memoCard ${even?"black":"white"}" onclick="openMemo(${i})">
+      7C[${m.c7}] HL[${m.hl}]
+    </div>`;
+  });
+}
+
+function newMemo(){
+  editIndex=null;
+  openEditor({
+    c7:"",hl:"",
+    t:"",d:"",b:"",w:"",c:"",
+    tt:"",tb:""
+  });
+}
+
+function openMemo(i){
+  editIndex=i;
+  openEditor(memos[i]);
+}
+
+function openEditor(m){
+  const showBottom = parseInt(m.c7)%2===1;
+  editor.innerHTML=`
+  <button onclick="closeEditor()">← 뒤로</button>
+
+  <label>7C</label>
+  <input value="${m.c7}" oninput="num(this,4);toggleBottom()">
+
+  <label>HL</label>
+  <input value="${m.hl}" oninput="num(this,4)">
+
+  <hr>
+
+  <div class="row">
+    <input placeholder="T" value="${m.t}" oninput="num(this,3)">
+    <input placeholder="D" value="${m.d}" oninput="num(this,2)">
+    <input placeholder="B" value="${m.b}" oninput="num(this,2)">
+    <input placeholder="W" value="${m.w}" oninput="num(this,2)">
+    <input placeholder="C" value="${m.c}" oninput="num(this,3)">
+  </div>
+
+  <div id="bottom" class="${showBottom?"":"hidden"}">
+    <hr>
+    <div class="bottomRow">
+      <div>
+        <label>T/T</label>
+        <input value="${m.tt}" oninput="num(this,4)">
+      </div>
+      <div>
+        <label>T/B</label>
+        <input value="${m.tb}" oninput="num(this,4)">
+      </div>
+    </div>
+  </div>
+
+  <button class="memoBtn" onclick="save()">저장</button>
+  `;
+  editor.classList.remove("hidden");
+}
+
+function toggleBottom(){
+  const c7 = editor.querySelectorAll("input")[0].value;
+  document.getElementById("bottom").classList.toggle(
+    "hidden", parseInt(c7)%2===0
+  );
+}
+
+function closeEditor(){
+  editor.classList.add("hidden");
+}
+
+function save(){
+  const i = editor.querySelectorAll("input");
+  const m={
+    c7:i[0].value, hl:i[1].value,
+    t:i[2].value, d:i[3].value,
+    b:i[4].value, w:i[5].value, c:i[6].value,
+    tt:i[7]?.value||"", tb:i[8]?.value||""
+  };
+  if(editIndex===null) memos.push(m);
+  else memos[editIndex]=m;
+  localStorage.setItem("memos",JSON.stringify(memos));
+  closeEditor(); render();
+}
+
+render();
+</script>
+
 </body>
 </html>
