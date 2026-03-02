@@ -17,8 +17,9 @@ body{
 header{
   text-align:center;
   padding:16px;
-  font-size:2.1rem; /* 기본보다 +10 이상 */
+  font-size:2.1rem;
   font-weight:900;
+  cursor:pointer;
 }
 .controls{
   display:flex;
@@ -26,11 +27,12 @@ header{
   justify-content:center;
 }
 button{
-  padding:10px 16px;
+  padding:14px 18px;
   border:none;
   border-radius:12px;
   background:#fff;
-  font-weight:800;
+  font-weight:900;
+  font-size:1.5rem;
 }
 #memoList{padding:12px;}
 .memo{
@@ -79,6 +81,9 @@ input{
   gap:8px;
   margin-bottom:4px;
 }
+.cmpt input{
+  width:120px;
+}
 .cmpt label{width:90px;}
 .red{
   color:red;
@@ -99,25 +104,26 @@ textarea{
 .hidden{display:none}
 
 /* 사진 */
-#photoViewer{
+#photoLayer{
   position:fixed;
   inset:0;
   background:black;
   display:none;
   justify-content:center;
   align-items:center;
+  z-index:999;
 }
-#photoViewer img{
+#photoLayer img{
   max-width:100%;
   max-height:100%;
-  touch-action:manipulation;
+  transform:scale(1);
 }
 </style>
 </head>
 
 <body>
 
-<header>JAS MEMO VER 1.2.X</header>
+<header onclick="openPhoto()">JAS MEMO VER 1.2.X</header>
 
 <div class="controls">
   <button onclick="newMemo()">메모 추가</button>
@@ -127,12 +133,14 @@ textarea{
 
 <div id="memoList"></div>
 
+<input type="file" id="photoInput" accept="image/*" hidden>
+
 <!-- 메모 모달 -->
 <div class="modal" id="modal">
 <div class="box">
   <div class="row">
-    <label><input type="checkbox" id="inChk"> INBOUND</label>
-    <label><input type="checkbox" id="outChk"> OUTBOUND</label>
+    <label><input type="checkbox" id="inChk">INBOUND</label>
+    <label style="margin-left:20px"><input type="checkbox" id="outChk">OUTBOUND</label>
   </div>
 
   <div class="red" id="time" onclick="setTime()" ondblclick="editTime()">--:--</div>
@@ -149,18 +157,23 @@ textarea{
 </div>
 
 <!-- 사진 -->
-<div id="photoViewer" ondblclick="hidePhoto()">
+<div id="photoLayer" ondblclick="closePhoto()">
   <img id="photoImg">
 </div>
 
 <script>
 let memos=JSON.parse(localStorage.getItem("jas_memos")||"[]");
 let editId=null;
-let photo=null;
+let photo=localStorage.getItem("jas_photo")||null;
+let scale=1;
 
 /* 숫자 자동 이동 */
 document.addEventListener("input",e=>{
   if(e.target.tagName!=="INPUT")return;
+  if(e.target.dataset.hl==="in"){
+    const out=document.querySelector('[data-hl="out"]');
+    if(out) out.value=e.target.value;
+  }
   const max=e.target.maxLength;
   if(max>0 && e.target.value.length>=max){
     const inputs=[...document.querySelectorAll("input")];
@@ -194,12 +207,13 @@ return `
 <div class="section-title">${type}</div>
 <div class="row">
 <label>7C</label><input maxlength="4" data-k="${type}-c7">
-<label>HL</label><input maxlength="4" data-k="${type}-hl">
+<label>HL</label><input maxlength="4" data-k="${type}-hl" data-hl="${type==='INBOUND'?'in':'out'}">
 </div>
 ${[1,2,3,4].map(i=>`
 <div class="cmpt">
 <label>CMPT ${i}</label>
 <input data-k="${type}-cmpt${i}">
+<input data-k="${type}-cmpt${i}-b">
 </div>`).join("")}
 <div class="row">
 <label>T</label><input maxlength="3" data-k="${type}-t">
@@ -211,11 +225,6 @@ ${[1,2,3,4].map(i=>`
 <label>C</label><input maxlength="3" data-k="${type}-c">
 <label>COB</label><input maxlength="3" data-k="${type}-cob">
 </div>
-${type==="OUTBOUND"?`
-<div class="row">
-<label>T/T</label><input maxlength="4" data-k="tt">
-<label>T/B</label><input maxlength="4" data-k="tb">
-</div>`:""}
 `;
 }
 
@@ -243,8 +252,8 @@ function renderList(){
 memoList.innerHTML="";
 memos.forEach(m=>{
 let title="";
-if(m["INBOUND-c7"]) title+=`7C[${m["INBOUND-c7"]}] HL[${m["INBOUND-hl"]}] `;
-if(m["OUTBOUND-c7"]) title+=`7C[${m["OUTBOUND-c7"]}]`;
+if(m["INBOUND-c7"]) title+=`IN 7C[${m["INBOUND-c7"]}] HL[${m["INBOUND-hl"]}] `;
+if(m["OUTBOUND-c7"]) title+=`OUT 7C[${m["OUTBOUND-c7"]}]`;
 memoList.innerHTML+=`
 <div class="memo">
 <input type="checkbox">
@@ -276,26 +285,41 @@ renderList();
 
 /* 사진 */
 function addPhoto(){
-const f=document.createElement("input");
-f.type="file"; f.accept="image/*";
-f.onchange=e=>{
-const r=new FileReader();
-r.onload=()=>{photo=r.result; showPhoto();}
-r.readAsDataURL(e.target.files[0]);
+  photoInput.click();
+}
+photoInput.onchange=e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    photo=r.result;
+    localStorage.setItem("jas_photo",photo);
+  };
+  r.readAsDataURL(f);
 };
-f.click();
+
+function openPhoto(){
+  if(!photo) return;
+  photoImg.src=photo;
+  scale=1;
+  photoImg.style.transform="scale(1)";
+  photoLayer.style.display="flex";
 }
-function showPhoto(){
-photoImg.src=photo;
-photoViewer.style.display="flex";
+function closePhoto(){
+  photoLayer.style.display="none";
+  scale=1;
+  photoImg.style.transform="scale(1)";
 }
-function hidePhoto(){
-photoViewer.style.display="none";
-}
+
+photoLayer.onwheel=e=>{
+  e.preventDefault();
+  scale+=e.deltaY<0?0.1:-0.1;
+  scale=Math.max(1,Math.min(scale,4));
+  photoImg.style.transform=`scale(${scale})`;
+};
 
 renderList();
 </script>
 
 </body>
 </html>
-
