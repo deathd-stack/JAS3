@@ -260,7 +260,7 @@ textarea:focus{
   inset:0;
   width:100vw;
   height:100vh;
-  object-fit:contain; /* 비율 유지 + 화면 꽉 */
+  object-fit:contain;
   background:#000;
   transform:scale(1);
   touch-action:none;
@@ -291,7 +291,6 @@ textarea:focus{
 <!-- MODAL -->
 <div class="modal" id="modal">
   <div class="box">
-
     <div class="row center" style="margin-bottom:10px;">
       <label class="chk"><input type="checkbox" id="inChk"> INBOUND</label>
       <label class="chk"><input type="checkbox" id="outChk"> OUTBOUND</label>
@@ -303,7 +302,6 @@ textarea:focus{
       <button style="flex:1" onclick="saveMemo()">SAVE</button>
       <button style="flex:1" onclick="closeModal()">CLOSE</button>
     </div>
-
   </div>
 </div>
 
@@ -332,7 +330,7 @@ function now(){
 }
 
 function setControlsVisible(v){
-  controls.style.display = v ? "flex" : "none"; // 메모 작성/수정 중 숨김
+  controls.style.display = v ? "flex" : "none";
 }
 
 function newMemo(){
@@ -429,7 +427,6 @@ function saveMemo(){
     }
   });
 
-  // 구버전 호환 (B -> BB)
   ["INBOUND","OUTBOUND"].forEach(t=>{
     const oldKey = `${t}-b`;
     const newKey = `${t}-bb`;
@@ -524,16 +521,17 @@ photoInput.onchange=e=>{
   r.readAsDataURL(f);
 };
 
-/* 사진 열기: 여백 더블탭(메모/버튼 제외) */
-document.addEventListener("dblclick",(e)=>{
-  if(!photo) return;
-  if(modal.style.display==="flex") return;
-  if(photoLayer.style.display==="block") return;
-  if(e.target.closest("#memoList")) return;
-  if(e.target.closest(".controls")) return;
-  openPhoto();
-});
+/* ===== iOS 안정 더블탭 감지 ===== */
+function makeDoubleTapHandler(fn){
+  let last = 0;
+  return function(){
+    const t = Date.now();
+    if(t - last < 330){ fn(); last = 0; }
+    else last = t;
+  };
+}
 
+/* 사진 열기 */
 function openPhoto(){
   if(!photo) return;
   scale=1;
@@ -542,15 +540,39 @@ function openPhoto(){
   photoLayer.style.display="block";
 }
 
-/* 사진 닫기: 사진 더블탭 */
-photoImg.addEventListener("dblclick",()=>{
-  closePhoto();
-});
-
+/* 사진 닫기 */
 function closePhoto(){
   photoLayer.style.display="none";
   scale=1;
 }
+
+/* ✅ 여백 더블탭 → 사진 열기 (dblclick + touch 더블탭 둘 다) */
+const openByDoubleTap = makeDoubleTapHandler(()=>{
+  if(!photo) return;
+  if(modal.style.display==="flex") return;
+  if(photoLayer.style.display==="block") return;
+
+  // 메모/버튼 영역은 제외(여백만)
+  const target = window.__lastTapTarget || document.body;
+  if(target.closest && (target.closest("#memoList") || target.closest(".controls"))) return;
+
+  openPhoto();
+});
+
+document.addEventListener("dblclick",(e)=>{
+  window.__lastTapTarget = e.target;
+  openByDoubleTap();
+});
+document.addEventListener("touchend",(e)=>{
+  window.__lastTapTarget = e.target;
+  openByDoubleTap();
+}, {passive:true});
+
+/* ✅ 사진 더블탭 → 닫기 (iOS용) */
+const closeByDoubleTap = makeDoubleTapHandler(()=>closePhoto());
+
+photoImg.addEventListener("dblclick",()=>closeByDoubleTap());
+photoImg.addEventListener("touchend",()=>closeByDoubleTap(), {passive:true});
 
 /* (유지) 휠 확대/축소 */
 photoLayer.onwheel=e=>{
