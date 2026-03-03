@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport"
 content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
@@ -48,13 +48,16 @@ button{
   margin-bottom:10px;
   display:flex;
   gap:10px;
-  align-items:center;
+  align-items:flex-start;
 }
 
 .memo-title{
   font-weight:900;
   cursor:pointer;
+  line-height:1.25;
 }
+
+.memo-title .line{ margin:2px 0; }
 
 /* modal */
 .modal{
@@ -80,6 +83,7 @@ button{
   gap:10px;
   align-items:center;
   margin-bottom:6px;
+  flex-wrap:wrap;
 }
 
 input{
@@ -106,6 +110,7 @@ input[data-long]{width:260px;}
   color:red;
   font-weight:900;
   cursor:pointer;
+  user-select:none;
 }
 
 textarea{
@@ -149,22 +154,22 @@ textarea{
 
 <!-- MODAL -->
 <div class="modal" id="modal">
-<div class="box">
+  <div class="box">
 
-  <div class="row" style="justify-content:center">
-    <input type="checkbox" id="inChk"> INBOUND
-    <span style="width:30px"></span>
-    <input type="checkbox" id="outChk"> OUTBOUND
+    <div class="row" style="justify-content:center">
+      <input type="checkbox" id="inChk"> INBOUND
+      <span style="width:30px"></span>
+      <input type="checkbox" id="outChk"> OUTBOUND
+    </div>
+
+    <div id="sections"></div>
+
+    <div class="row">
+      <button onclick="saveMemo()">SAVE</button>
+      <button onclick="closeModal()">CLOSE</button>
+    </div>
+
   </div>
-
-  <div id="sections"></div>
-
-  <div class="row">
-    <button onclick="saveMemo()">SAVE</button>
-    <button onclick="closeModal()">CLOSE</button>
-  </div>
-
-</div>
 </div>
 
 <!-- PHOTO -->
@@ -214,12 +219,18 @@ function makeSection(type){
   d.innerHTML=`
     <div class="section-title">
       ${type}
-      <span class="time" onclick="this.textContent=now()" ondblclick="this.textContent=prompt('TIME',this.textContent)||this.textContent">--:--</span>
+      <!-- 시간: 탭(클릭)=현재시간 저장 / 더블탭=수정 -->
+      <span class="time"
+        data-k="${type}-time"
+        onclick="this.textContent=now()"
+        ondblclick="this.textContent=prompt('TIME',this.textContent)||this.textContent"
+      >--:--</span>
     </div>
 
     <div class="row">
       7C <input maxlength="4" inputmode="numeric" data-k="${type}-c7">
       HL <input maxlength="4" inputmode="numeric" data-k="HL">
+      # <input maxlength="3" inputmode="numeric" data-k="NUM">
     </div>
 
     ${[1,2,3,4].map(i=>`
@@ -231,7 +242,7 @@ function makeSection(type){
     <div class="row">
       T <input maxlength="3" inputmode="numeric" data-k="${type}-t">
       D <input maxlength="2" inputmode="numeric" data-k="${type}-d">
-      B <input maxlength="2" inputmode="numeric" data-k="${type}-b">
+      BB <input maxlength="2" inputmode="numeric" data-k="${type}-bb">
     </div>
 
     <div class="row">
@@ -240,15 +251,23 @@ function makeSection(type){
       COB <input maxlength="3" inputmode="numeric" data-k="${type}-cob">
     </div>
 
+    ${type==="OUTBOUND" ? `
+      <div class="row">
+        T/T <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tt">
+        T/B <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tb">
+      </div>
+    ` : ""}
+
     <textarea data-k="${type}-note" placeholder="특이사항 (${type})"></textarea>
   `;
   return d;
 }
 
-/* HL 동기화 */
+/* HL + # 동기화 */
 document.addEventListener("input",e=>{
-  if(e.target.dataset.k==="HL"){
-    document.querySelectorAll('[data-k="HL"]').forEach(i=>{
+  const k = e.target?.dataset?.k;
+  if(k==="HL" || k==="NUM"){
+    document.querySelectorAll(`[data-k="${k}"]`).forEach(i=>{
       if(i!==e.target) i.value=e.target.value;
     });
   }
@@ -257,27 +276,59 @@ document.addEventListener("input",e=>{
 /* SAVE */
 function saveMemo(){
   const data={id:editId??Date.now()};
-  document.querySelectorAll("[data-k]").forEach(i=>{
-    data[i.dataset.k]=i.value;
+
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k;
+
+    // span(time)은 textContent 저장
+    if(el.tagName==="SPAN"){
+      data[k]=el.textContent;
+    }else{
+      data[k]=el.value;
+    }
   });
-  editId
-    ? memos[memos.findIndex(m=>m.id===editId)]=data
-    : memos.push(data);
+
+  // 기존 데이터 호환(옛날 B 키가 있으면 bb로 흡수)
+  ["INBOUND","OUTBOUND"].forEach(t=>{
+    const oldKey = `${t}-b`;
+    const newKey = `${t}-bb`;
+    if(data[newKey]==="" && data[oldKey]) data[newKey]=data[oldKey];
+    delete data[oldKey];
+  });
+
+  if(editId){
+    memos[memos.findIndex(m=>m.id===editId)]=data;
+  }else{
+    memos.push(data);
+  }
 
   localStorage.setItem("jas_memos",JSON.stringify(memos));
-  closeModal(); renderList();
+  closeModal();
+  renderList();
 }
 
 function renderList(){
   memoList.innerHTML="";
   memos.forEach(m=>{
-    let t=[];
-    if(m["INBOUND-c7"]) t.push(`IN 7C[${m["INBOUND-c7"]}] HL[${m.HL}]`);
-    if(m["OUTBOUND-c7"]) t.push(`OUT 7C[${m["OUTBOUND-c7"]}]`);
+    const num = m.NUM || "";
+    const hl  = m.HL  || "";
+
+    const inLine = (m["INBOUND-c7"] || hl || num)
+      ? `IN 7C[${m["INBOUND-c7"]||""}] HL[${hl}] #[${num}]`
+      : "";
+
+    const outLine = (m["OUTBOUND-c7"] || num)
+      ? `OUT 7C[${m["OUTBOUND-c7"]||""}] #[${num}]`
+      : "";
+
     memoList.innerHTML+=`
       <div class="memo">
         <input type="checkbox">
-        <div class="memo-title" onclick="editMemo(${m.id})">${t.join(" / ")}</div>
+        <div class="memo-title" onclick="editMemo(${m.id})">
+          ${inLine ? `<div class="line">${inLine}</div>` : ""}
+          ${outLine ? `<div class="line">${outLine}</div>` : ""}
+          ${(!inLine && !outLine) ? `<div class="line">NEW MEMO</div>` : ""}
+        </div>
       </div>`;
   });
 }
@@ -286,11 +337,26 @@ function editMemo(id){
   editId=id;
   const m=memos.find(x=>x.id===id);
   modal.style.display="flex";
+
   inChk.checked=!!m["INBOUND-c7"];
   outChk.checked=!!m["OUTBOUND-c7"];
   renderSections();
-  document.querySelectorAll("[data-k]").forEach(i=>{
-    i.value=m[i.dataset.k]||"";
+
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k;
+
+    // 옛날 B 키 호환
+    let v = m[k];
+    if(v==null && k.endsWith("-bb")){
+      const old = k.replace("-bb","-b");
+      v = m[old];
+    }
+
+    if(el.tagName==="SPAN"){
+      el.textContent = (v!=null && v!=="") ? v : "--:--";
+    }else{
+      el.value = (v!=null) ? v : "";
+    }
   });
 }
 
