@@ -28,7 +28,6 @@ body{
   padding-bottom:22px;
 }
 
-/* 헤더 */
 header{
   text-align:center;
   padding:18px 14px 10px;
@@ -41,7 +40,6 @@ header{
   text-shadow:0 1px 0 rgba(255,255,255,.35);
 }
 
-/* 상단 컨트롤 */
 .controls{
   position:sticky;
   top:0;
@@ -71,7 +69,6 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
 
 #memoList{ padding:10px 12px; }
 
-/* 메모 카드 */
 .memo{
   background:var(--card);
   border-radius:var(--radius);
@@ -125,7 +122,7 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   color:#fff;
 }
 
-/* MODAL (바텀시트) */
+/* MODAL */
 .modal{
   position:fixed;
   inset:0;
@@ -134,6 +131,7 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   justify-content:center;
   align-items:flex-end;
   padding:10px;
+  z-index:1000;
 }
 
 .box{
@@ -142,16 +140,33 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   overflow:auto;
   background:rgba(255,255,255,.96);
   border-radius:24px;
-  padding:14px 14px 16px;
+  padding:10px 14px 16px;
   box-shadow:0 18px 60px rgba(0,0,0,.30);
   animation:sheetIn .14s ease-out;
+  will-change:transform;
 }
 @keyframes sheetIn{
   from{ transform:translateY(14px); opacity:.8; }
   to{ transform:translateY(0); opacity:1; }
 }
 
-/* 체크 줄 */
+/* ✅ 손잡이 */
+.handle-wrap{
+  display:flex;
+  justify-content:center;
+  padding:6px 0 10px;
+  position:sticky;
+  top:0;
+  background:rgba(255,255,255,.96);
+  z-index:2;
+}
+.handle{
+  width:54px;
+  height:6px;
+  border-radius:999px;
+  background:rgba(0,0,0,.18);
+}
+
 .row{
   display:flex;
   gap:10px;
@@ -159,6 +174,8 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   margin-bottom:8px;
   flex-wrap:wrap;
 }
+
+.row.nowrap{ flex-wrap:nowrap; }
 
 .row.center{
   justify-content:center;
@@ -199,7 +216,6 @@ label.chk input{ transform:scale(1.05); }
   letter-spacing:.2px;
 }
 
-/* 시간 칩 */
 .time{
   color:#d20000;
   font-weight:1000;
@@ -211,11 +227,13 @@ label.chk input{ transform:scale(1.05); }
   border:1px solid rgba(210,0,0,.15);
 }
 
-/* 입력 */
 .field-label{
+  display:inline-block;
+  min-width:26px;
   font-weight:1000;
-  color:rgba(0,0,0,.75);
+  color:rgba(0,0,0,.72);
 }
+.field-label.cob{ min-width:40px; }
 
 input{
   width:74px;
@@ -253,7 +271,6 @@ textarea:focus{
   box-shadow:0 0 0 4px rgba(0,0,0,.08);
 }
 
-/* ✅ CMPT 왼쪽 정렬 */
 .cmpt-row{
   justify-content:flex-start;
   flex-wrap:nowrap;
@@ -263,8 +280,11 @@ textarea:focus{
   font-weight:1000;
   text-align:left;
 }
+.cmpt-row input[data-long]{
+  text-align:left;
+  padding-left:14px;
+}
 
-/* 액션 버튼 */
 .row.actions{
   margin-top:12px;
   gap:10px;
@@ -295,7 +315,6 @@ textarea:focus{
   touch-action:none;
 }
 
-/* 작은 화면 보정 */
 @media (max-width:380px){
   header{ font-size:1.85rem; }
   button{ padding:11px 14px; font-size:.98rem; }
@@ -311,7 +330,7 @@ textarea:focus{
 
 <header id="titleBtn">JAS MEMO VER.3</header>
 
-<div class="controls">
+<div class="controls" id="controls">
   <button onclick="newMemo()">ADD</button>
   <button onclick="deleteSelected()">DELETE</button>
   <button onclick="addPhoto()">PHOTO</button>
@@ -322,7 +341,11 @@ textarea:focus{
 
 <!-- MODAL -->
 <div class="modal" id="modal">
-  <div class="box">
+  <div class="box" id="sheet">
+    <div class="handle-wrap" id="handleArea">
+      <div class="handle"></div>
+    </div>
+
     <div class="row center" style="margin-bottom:10px;">
       <label class="chk"><input type="checkbox" id="inChk"> INBOUND</label>
       <label class="chk"><input type="checkbox" id="outChk"> OUTBOUND</label>
@@ -344,12 +367,15 @@ textarea:focus{
 
 <script>
 const modal = document.getElementById("modal");
+const sheet = document.getElementById("sheet");
+const handleArea = document.getElementById("handleArea");
 const sections = document.getElementById("sections");
 const memoList = document.getElementById("memoList");
 const photoInput = document.getElementById("photoInput");
 const photoLayer = document.getElementById("photoLayer");
 const photoImg = document.getElementById("photoImg");
 const titleBtn = document.getElementById("titleBtn");
+const controls = document.getElementById("controls");
 
 let memos = JSON.parse(localStorage.getItem("jas_memos")||"[]");
 let editId=null;
@@ -365,16 +391,26 @@ function now(){
   return d.toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit"});
 }
 
+function setControlsVisible(v){
+  controls.style.display = v ? "flex" : "none";
+}
+
 /* ---------- MEMO ---------- */
 function newMemo(){
   editId=null;
   inChk.checked=false;
   outChk.checked=false;
   sections.innerHTML="";
+  setControlsVisible(false);
   modal.style.display="flex";
+  sheet.style.transform = "translateY(0)";
 }
 
-function closeModal(){ modal.style.display="none"; }
+function closeModal(){
+  modal.style.display="none";
+  setControlsVisible(true);
+  sheet.style.transform = "translateY(0)";
+}
 
 inChk.onchange = outChk.onchange = renderSections;
 
@@ -397,7 +433,7 @@ function makeSection(type){
       >--:--</span>
     </div>
 
-    <div class="row">
+    <div class="row nowrap">
       <span class="field-label">7C</span> <input maxlength="4" inputmode="numeric" data-k="${type}-c7">
       <span class="field-label">HL</span> <input maxlength="4" inputmode="numeric" data-k="HL">
       <span class="field-label">#</span> <input maxlength="3" inputmode="numeric" data-k="NUM">
@@ -409,22 +445,22 @@ function makeSection(type){
         <input data-long data-k="${type}-cmpt${i}" ${i<=2 ? `value="F"` : ""}>
       </div>`).join("")}
 
-    <div class="row">
+    <div class="row nowrap">
       <span class="field-label">T</span> <input maxlength="3" inputmode="numeric" data-k="${type}-t">
       <span class="field-label">D</span> <input maxlength="2" inputmode="numeric" data-k="${type}-d">
       <span class="field-label">BB</span> <input maxlength="2" inputmode="numeric" data-k="${type}-bb">
     </div>
 
-    <div class="row">
+    <div class="row nowrap">
       <span class="field-label">W</span> <input maxlength="2" inputmode="numeric" data-k="${type}-w">
       <span class="field-label">C</span> <input maxlength="3" inputmode="numeric" data-k="${type}-c">
-      <span class="field-label">COB</span> <input maxlength="3" inputmode="numeric" data-k="${type}-cob">
+      <span class="field-label cob">COB</span> <input maxlength="3" inputmode="numeric" data-k="${type}-cob">
     </div>
 
     ${type==="OUTBOUND" ? `
-      <div class="row">
-        <span class="field-label">T/T</span> <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tt">
-        <span class="field-label">T/B</span> <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tb">
+      <div class="row nowrap">
+        <span class="field-label" style="min-width:34px;">T/T</span> <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tt">
+        <span class="field-label" style="min-width:34px;">T/B</span> <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tb">
       </div>
     ` : ""}
 
@@ -498,7 +534,10 @@ function editMemo(id){
   editId=id;
   const m=memos.find(x=>x.id===id);
 
+  setControlsVisible(false);
   modal.style.display="flex";
+  sheet.style.transform = "translateY(0)";
+
   inChk.checked=!!m["INBOUND-c7"];
   outChk.checked=!!m["OUTBOUND-c7"];
   renderSections();
@@ -523,6 +562,53 @@ function deleteSelected(){
   localStorage.setItem("jas_memos",JSON.stringify(memos));
   renderList();
 }
+
+/* ✅ 손잡이 스와이프 다운으로 닫기 */
+(function enableSwipeToClose(){
+  let startY=null;
+  let currentY=0;
+  let dragging=false;
+
+  const start = (y)=>{
+    if(modal.style.display!=="flex") return;
+    startY=y;
+    currentY=0;
+    dragging=true;
+    sheet.style.transition="none";
+  };
+
+  const move = (y)=>{
+    if(!dragging || startY==null) return;
+    const dy = Math.max(0, y - startY);
+    currentY = dy;
+    sheet.style.transform = `translateY(${dy}px)`;
+  };
+
+  const end = ()=>{
+    if(!dragging) return;
+    dragging=false;
+    sheet.style.transition="transform .16s ease-out";
+
+    // 90px 이상 내려가면 닫기
+    if(currentY > 90){
+      sheet.style.transform = `translateY(220px)`;
+      setTimeout(()=>closeModal(), 140);
+    }else{
+      sheet.style.transform = "translateY(0)";
+    }
+
+    startY=null;
+    currentY=0;
+  };
+
+  handleArea.addEventListener("touchstart",(e)=>start(e.touches[0].clientY),{passive:true});
+  handleArea.addEventListener("touchmove",(e)=>move(e.touches[0].clientY),{passive:true});
+  handleArea.addEventListener("touchend",end,{passive:true});
+
+  handleArea.addEventListener("mousedown",(e)=>start(e.clientY));
+  window.addEventListener("mousemove",(e)=>move(e.clientY));
+  window.addEventListener("mouseup",end);
+})();
 
 /* ---------- PHOTO ---------- */
 function addPhoto(){ photoInput.click(); }
