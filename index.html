@@ -9,11 +9,14 @@ content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
 
 <style>
 :root{
-  --bg:#ff6a00;
+  --bg:#ff6a00;         /* 형광 주황 */
   --card:rgba(255,255,255,.92);
   --card2:rgba(255,255,255,.82);
   --text:#111;
+  --muted:rgba(0,0,0,.55);
   --shadow:0 10px 28px rgba(0,0,0,.18);
+  --shadow2:0 6px 18px rgba(0,0,0,.14);
+  --radius:18px;
 }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -27,37 +30,248 @@ body{
   padding-bottom:22px;
 }
 
-/* ===== 상단 타이틀 ===== */
 header{
   text-align:center;
-  padding:20px 14px 14px;
-  font-size:2.2rem;
+  padding:18px 14px 10px;
+  font-size:2.05rem;
   font-weight:950;
+  cursor:default;
   letter-spacing:.5px;
   color:#111;
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
 }
 
-/* ===== 사진 ===== */
+.controls{
+  position:sticky;
+  top:0;
+  z-index:10;
+  display:flex;
+  justify-content:center;
+  gap:10px;
+  padding:10px 12px 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background:linear-gradient(to bottom, rgba(255,106,0,.82), rgba(255,106,0,.55));
+}
 
+button{
+  padding:12px 16px;
+  border:none;
+  border-radius:16px;
+  background:var(--card);
+  box-shadow:var(--shadow2);
+  font-weight:950;
+  font-size:1.05rem;
+  letter-spacing:.2px;
+  transition:transform .08s ease, filter .2s ease;
+}
+button:active{ transform:scale(.98); filter:brightness(.98); }
+
+#memoList{ padding:10px 12px; }
+
+.memo{
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:12px 12px;
+  margin-bottom:10px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  box-shadow:var(--shadow);
+}
+
+.memo input[type="checkbox"]{
+  width:22px;
+  height:22px;
+  accent-color:#111;
+  flex:0 0 auto;
+}
+
+.memo-title{
+  font-weight:950;
+  cursor:pointer;
+  line-height:1.18;
+  width:100%;
+}
+
+.memo-title .line{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  margin:2px 0;
+  white-space:nowrap;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(0,0,0,.06);
+  font-weight:950;
+  font-size:.95rem;
+}
+
+.badge .tag{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:1000;
+  letter-spacing:.5px;
+  background:#111;
+  color:#fff;
+}
+
+/* modal */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  display:none;
+  justify-content:center;
+  align-items:flex-end;
+  padding:10px;
+}
+
+.box{
+  background:var(--card);
+  width:min(720px, 100%);
+  max-height:92vh;
+  overflow:auto;
+  border-radius:22px;
+  padding:14px 14px 16px;
+  box-shadow:var(--shadow);
+  animation:sheetIn .14s ease-out;
+}
+@keyframes sheetIn{
+  from{ transform:translateY(14px); opacity:.7; }
+  to{ transform:translateY(0); opacity:1; }
+}
+
+.row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+
+.row.center{
+  justify-content:center;
+  flex-wrap:nowrap;            /* IN/OUT 한줄 */
+  gap:8px;
+}
+.row.actions{ margin-top:12px; }
+
+.section{
+  margin-top:14px;
+  background:var(--card2);
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 6px 14px rgba(0,0,0,.10);
+}
+
+.section-title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:1000;
+  margin-bottom:8px;
+  letter-spacing:.2px;
+}
+
+.time{
+  color:#d20000;
+  font-weight:1000;
+  cursor:pointer;
+  user-select:none;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(210,0,0,.08);
+}
+
+label.chk{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  font-weight:1000;
+  padding:10px 12px;
+  border-radius:16px;
+  background:var(--card2);
+  box-shadow:0 6px 14px rgba(0,0,0,.10);
+  flex:1;
+  min-width:0;
+  white-space:nowrap;
+}
+
+label.chk input{ transform:scale(1.05); }
+
+input{
+  width:72px;
+  text-align:center;
+  font-weight:950;
+  font-size:1.02rem;
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.10);
+  background:rgba(255,255,255,.95);
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+input:focus{
+  border-color:rgba(0,0,0,.35);
+  box-shadow:0 0 0 4px rgba(0,0,0,.08);
+}
+input[data-long]{ width: min(320px, 100%); }
+
+textarea{
+  width:100%;
+  height:78px;
+  margin-top:8px;
+  font-weight:800;
+  font-size:1rem;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(0,0,0,.10);
+  background:rgba(255,255,255,.95);
+  outline:none;
+  resize:none;
+}
+textarea:focus{
+  border-color:rgba(0,0,0,.35);
+  box-shadow:0 0 0 4px rgba(0,0,0,.08);
+}
+
+/* PHOTO */
 #photoLayer{
   position:fixed;
   inset:0;
-  background:black;
+  background:#000;
   display:none;
   z-index:9999;
 }
-
 #photoLayer img{
   position:absolute;
   inset:0;
   width:100vw;
   height:100vh;
-  object-fit:contain;   /* 화면 꽉 채움 */
-  background:black;
+  object-fit:contain; /* 비율 유지 + 화면 꽉 */
+  background:#000;
   transform:scale(1);
   touch-action:none;
 }
 
+@media (max-width:380px){
+  header{ font-size:1.9rem; }
+  button{ padding:11px 14px; font-size:1rem; }
+  .badge{ font-size:.9rem; }
+  label.chk{ padding:9px 10px; font-size:.98rem; }
+}
 </style>
 </head>
 
@@ -65,22 +279,261 @@ header{
 
 <header>JAS MEMO VER.3</header>
 
-<!-- 기존 메모 UI 그대로 사용 -->
+<div class="controls" id="controls">
+  <button onclick="newMemo()">ADD</button>
+  <button onclick="deleteSelected()">DELETE</button>
+  <button onclick="addPhoto()">PHOTO</button>
+</div>
 
+<div id="memoList"></div>
+<input type="file" id="photoInput" accept="image/*" hidden>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="box">
+
+    <div class="row center" style="margin-bottom:10px;">
+      <label class="chk"><input type="checkbox" id="inChk"> INBOUND</label>
+      <label class="chk"><input type="checkbox" id="outChk"> OUTBOUND</label>
+    </div>
+
+    <div id="sections"></div>
+
+    <div class="row actions">
+      <button style="flex:1" onclick="saveMemo()">SAVE</button>
+      <button style="flex:1" onclick="closeModal()">CLOSE</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHOTO -->
 <div id="photoLayer">
-  <img id="photoImg">
+  <img id="photoImg" alt="photo">
 </div>
 
 <script>
-
-/* 기존 변수 유지 */
+const modal = document.getElementById("modal");
+const sections = document.getElementById("sections");
+const memoList = document.getElementById("memoList");
+const photoInput = document.getElementById("photoInput");
 const photoLayer = document.getElementById("photoLayer");
 const photoImg = document.getElementById("photoImg");
+const controls = document.getElementById("controls");
 
+let memos = JSON.parse(localStorage.getItem("jas_memos")||"[]");
+let editId=null;
 let photo = localStorage.getItem("jas_photo");
 let scale=1;
 
-/* ===== 사진 열기 ===== */
+function now(){
+  const d=new Date();
+  return d.toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit"});
+}
+
+function setControlsVisible(v){
+  controls.style.display = v ? "flex" : "none"; // 메모 작성/수정 중 숨김
+}
+
+function newMemo(){
+  editId=null;
+  inChk.checked=false;
+  outChk.checked=false;
+  sections.innerHTML="";
+  setControlsVisible(false);
+  modal.style.display="flex";
+}
+
+function closeModal(){
+  modal.style.display="none";
+  setControlsVisible(true);
+}
+
+inChk.onchange = outChk.onchange = renderSections;
+
+function renderSections(){
+  sections.innerHTML="";
+  if(inChk.checked) sections.append(makeSection("INBOUND"));
+  if(outChk.checked) sections.append(makeSection("OUTBOUND"));
+}
+
+function makeSection(type){
+  const d=document.createElement("div");
+  d.className="section";
+  d.innerHTML=`
+    <div class="section-title">
+      ${type}
+      <span class="time"
+        data-k="${type}-time"
+        onclick="this.textContent=now()"
+        ondblclick="this.textContent=prompt('TIME',this.textContent)||this.textContent"
+      >--:--</span>
+    </div>
+
+    <div class="row">
+      7C <input maxlength="4" inputmode="numeric" data-k="${type}-c7">
+      HL <input maxlength="4" inputmode="numeric" data-k="HL">
+      # <input maxlength="3" inputmode="numeric" data-k="NUM">
+    </div>
+
+    ${[1,2,3,4].map(i=>`
+      <div class="row">
+        CMPT ${i}
+        <input data-long data-k="${type}-cmpt${i}">
+      </div>`).join("")}
+
+    <div class="row">
+      T <input maxlength="3" inputmode="numeric" data-k="${type}-t">
+      D <input maxlength="2" inputmode="numeric" data-k="${type}-d">
+      BB <input maxlength="2" inputmode="numeric" data-k="${type}-bb">
+    </div>
+
+    <div class="row">
+      W <input maxlength="2" inputmode="numeric" data-k="${type}-w">
+      C <input maxlength="3" inputmode="numeric" data-k="${type}-c">
+      COB <input maxlength="3" inputmode="numeric" data-k="${type}-cob">
+    </div>
+
+    ${type==="OUTBOUND" ? `
+      <div class="row">
+        T/T <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tt">
+        T/B <input maxlength="4" inputmode="numeric" data-k="OUTBOUND-tb">
+      </div>
+    ` : ""}
+
+    <textarea data-k="${type}-note" placeholder="특이사항 (${type})"></textarea>
+  `;
+  return d;
+}
+
+/* HL + # 동기화 */
+document.addEventListener("input",e=>{
+  const k = e.target?.dataset?.k;
+  if(k==="HL" || k==="NUM"){
+    document.querySelectorAll(`[data-k="${k}"]`).forEach(i=>{
+      if(i!==e.target) i.value=e.target.value;
+    });
+  }
+});
+
+/* SAVE */
+function saveMemo(){
+  const data={id:editId??Date.now()};
+
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k;
+    if(el.tagName==="SPAN"){
+      data[k]=el.textContent;
+    }else{
+      data[k]=el.value;
+    }
+  });
+
+  // 구버전 호환 (B -> BB)
+  ["INBOUND","OUTBOUND"].forEach(t=>{
+    const oldKey = `${t}-b`;
+    const newKey = `${t}-bb`;
+    if(data[newKey]==="" && data[oldKey]) data[newKey]=data[oldKey];
+    delete data[oldKey];
+  });
+
+  if(editId){
+    memos[memos.findIndex(m=>m.id===editId)]=data;
+  }else{
+    memos.push(data);
+  }
+
+  localStorage.setItem("jas_memos",JSON.stringify(memos));
+  closeModal();
+  renderList();
+}
+
+function renderList(){
+  memoList.innerHTML="";
+  memos.forEach(m=>{
+    const num = m.NUM || "";
+    const hl  = m.HL  || "";
+
+    const inLineText  = (m["INBOUND-c7"] || hl || num)
+      ? `7C[${m["INBOUND-c7"]||""}] HL[${hl}] #[${num}]`
+      : "";
+
+    const outLineText = (m["OUTBOUND-c7"] || num)
+      ? `7C[${m["OUTBOUND-c7"]||""}] #[${num}]`
+      : "";
+
+    const inRow  = inLineText  ? `<div class="line"><span class="badge"><span class="tag">IN</span> ${inLineText}</span></div>` : "";
+    const outRow = outLineText ? `<div class="line"><span class="badge"><span class="tag">OUT</span> ${outLineText}</span></div>` : "";
+
+    memoList.innerHTML+=`
+      <div class="memo">
+        <input type="checkbox">
+        <div class="memo-title" onclick="editMemo(${m.id})">
+          ${inRow}${outRow}
+          ${(!inRow && !outRow) ? `<div class="line"><span class="badge"><span class="tag">NEW</span> MEMO</span></div>` : ""}
+        </div>
+      </div>`;
+  });
+}
+
+function editMemo(id){
+  editId=id;
+  const m=memos.find(x=>x.id===id);
+  setControlsVisible(false);
+  modal.style.display="flex";
+
+  inChk.checked=!!m["INBOUND-c7"];
+  outChk.checked=!!m["OUTBOUND-c7"];
+  renderSections();
+
+  document.querySelectorAll("[data-k]").forEach(el=>{
+    const k=el.dataset.k;
+
+    let v = m[k];
+    if(v==null && k.endsWith("-bb")){
+      const old = k.replace("-bb","-b");
+      v = m[old];
+    }
+
+    if(el.tagName==="SPAN"){
+      el.textContent = (v!=null && v!=="") ? v : "--:--";
+    }else{
+      el.value = (v!=null) ? v : "";
+    }
+  });
+}
+
+/* DELETE */
+function deleteSelected(){
+  const c=[...document.querySelectorAll(".memo input")];
+  memos=memos.filter((_,i)=>!c[i].checked);
+  localStorage.setItem("jas_memos",JSON.stringify(memos));
+  renderList();
+}
+
+/* PHOTO 저장 */
+function addPhoto(){ photoInput.click(); }
+photoInput.onchange=e=>{
+  const f=e.target.files[0];
+  if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    photo=r.result;
+    localStorage.setItem("jas_photo",photo);
+  };
+  r.readAsDataURL(f);
+};
+
+/* 사진 열기: 여백 더블탭(메모/버튼 제외) */
+document.addEventListener("dblclick",(e)=>{
+  if(!photo) return;
+  if(modal.style.display==="flex") return;
+  if(photoLayer.style.display==="block") return;
+  if(e.target.closest("#memoList")) return;
+  if(e.target.closest(".controls")) return;
+  openPhoto();
+});
+
 function openPhoto(){
   if(!photo) return;
   scale=1;
@@ -89,7 +542,7 @@ function openPhoto(){
   photoLayer.style.display="block";
 }
 
-/* ===== 사진 닫기 (사진 더블탭) ===== */
+/* 사진 닫기: 사진 더블탭 */
 photoImg.addEventListener("dblclick",()=>{
   closePhoto();
 });
@@ -99,7 +552,7 @@ function closePhoto(){
   scale=1;
 }
 
-/* 확대 축소 */
+/* (유지) 휠 확대/축소 */
 photoLayer.onwheel=e=>{
   e.preventDefault();
   scale+=e.deltaY<0?0.1:-0.1;
@@ -107,15 +560,7 @@ photoLayer.onwheel=e=>{
   photoImg.style.transform=`scale(${scale})`;
 };
 
-/* ===== 여백 더블탭 → 사진 열기 ===== */
-document.addEventListener("dblclick",(e)=>{
-  if(!photo) return;
-  if(photoLayer.style.display==="block") return;
-  if(e.target.closest("#memoList")) return;
-  if(e.target.closest(".controls")) return;
-  openPhoto();
-});
-
+renderList();
 </script>
 
 </body>
