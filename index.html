@@ -20,7 +20,10 @@
 body{
   margin:0;
   font-family:system-ui,-apple-system;
-  background:#ff7a00; /* ✅ 당근색 */
+
+  /* ✅ 배경화면(bg.jpg). 파일 없으면 당근색만 보임 */
+  background:#ff7a00 url("bg.jpg") center/cover no-repeat fixed;
+
   color:var(--text);
   font-weight:650;
   padding-bottom:22px;
@@ -177,7 +180,7 @@ textarea{
   display:none;
   z-index:9999;
   overflow:hidden;
-  touch-action:none;           /* ✅ 핀치 줌을 우리가 처리 */
+  touch-action:none;
 }
 #photoLayer img{
   position:absolute;
@@ -272,8 +275,12 @@ function makeSection(type){
 
     ${[1,2,3,4].map(i=>`
       <div class="row cmpt-row">
-        <div class="lbl">CMPT ${i}${i<=2 ? ' F' : ''}</div>
-        <input data-long data-k="${type}-cmpt${i}">
+        <div class="lbl">CMPT ${i}</div>
+        ${
+          i<=2
+            ? `<input data-long data-k="${type}-cmpt${i}" value="F">`
+            : `<input data-long data-k="${type}-cmpt${i}">`
+        }
       </div>`).join("")}
 
     <textarea data-k="${type}-note" placeholder="특이사항 (${type})"></textarea>
@@ -334,8 +341,15 @@ function editMemo(id){
   inChk.checked=!!m["INBOUND-c7"];
   outChk.checked=!!m["OUTBOUND-c7"];
   renderSections();
+
   document.querySelectorAll("[data-k]").forEach(el=>{
-    el.value=m[el.dataset.k]||"";
+    const k = el.dataset.k;
+    let v = m[k] || "";
+
+    // ✅ CMPT 1,2는 저장값 없으면 기본 'F'
+    if(!v && (k.endsWith("-cmpt1") || k.endsWith("-cmpt2"))) v = "F";
+
+    el.value = v;
   });
 }
 
