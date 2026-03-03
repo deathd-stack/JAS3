@@ -8,116 +8,237 @@ content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
 <title>JAS MEMO VER 2</title>
 
 <style>
+:root{
+  --bg:#ff6a00;         /* 형광 주황 */
+  --card:rgba(255,255,255,.92);
+  --card2:rgba(255,255,255,.82);
+  --text:#111;
+  --muted:rgba(0,0,0,.55);
+  --shadow:0 10px 28px rgba(0,0,0,.18);
+  --shadow2:0 6px 18px rgba(0,0,0,.14);
+  --radius:18px;
+  --radius2:14px;
+}
+
+*{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
 body{
   margin:0;
   font-family:system-ui,-apple-system;
-  background:#ff9f1c url("jas-bg.png") center/contain no-repeat fixed;
-  font-weight:600;
+  background:var(--bg);
+  color:var(--text);
+  font-weight:650;
+  padding-bottom:22px;
 }
 
 header{
   text-align:center;
-  padding:18px;
-  font-size:2.2rem;
-  font-weight:900;
+  padding:18px 14px 10px;
+  font-size:2.05rem;
+  font-weight:950;
   cursor:pointer;
+  letter-spacing:.5px;
+  color:#111;
+  text-shadow:0 1px 0 rgba(255,255,255,.35);
 }
 
 .controls{
+  position:sticky;
+  top:0;
+  z-index:10;
   display:flex;
   justify-content:center;
-  gap:12px;
-  margin-bottom:10px;
+  gap:10px;
+  padding:10px 12px 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background:linear-gradient(to bottom, rgba(255,106,0,.82), rgba(255,106,0,.55));
 }
 
 button{
-  padding:10px 16px;
+  padding:12px 16px;
   border:none;
-  border-radius:12px;
-  background:#fff;
-  font-weight:900;
-  font-size:1.1rem;
+  border-radius:16px;
+  background:var(--card);
+  box-shadow:var(--shadow2);
+  font-weight:950;
+  font-size:1.05rem;
+  letter-spacing:.2px;
+  transition:transform .08s ease, filter .2s ease;
 }
+button:active{ transform:scale(.98); filter:brightness(.98); }
 
-#memoList{padding:12px;}
+#memoList{ padding:10px 12px; }
 
 .memo{
-  background:#fff;
-  border-radius:14px;
-  padding:12px;
+  background:var(--card);
+  border-radius:var(--radius);
+  padding:12px 12px;
   margin-bottom:10px;
   display:flex;
   gap:10px;
-  align-items:flex-start;
+  align-items:center;
+  box-shadow:var(--shadow);
+}
+
+.memo input[type="checkbox"]{
+  width:22px;
+  height:22px;
+  accent-color:#111;
+  flex:0 0 auto;
 }
 
 .memo-title{
-  font-weight:900;
+  font-weight:950;
   cursor:pointer;
-  line-height:1.25;
+  line-height:1.18;
+  width:100%;
 }
 
-.memo-title .line{ margin:2px 0; }
+.memo-title .line{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between; /* 한 줄에서 간격 정렬 */
+  margin:2px 0;
+  white-space:nowrap;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(0,0,0,.06);
+  font-weight:950;
+  font-size:.95rem;
+}
+
+.badge .tag{
+  display:inline-flex;
+  align-items:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:.78rem;
+  font-weight:1000;
+  letter-spacing:.5px;
+  background:#111;
+  color:#fff;
+}
+
+.badge .muted{ color:var(--muted); font-weight:900; }
 
 /* modal */
 .modal{
   position:fixed;
   inset:0;
-  background:rgba(0,0,0,.5);
+  background:rgba(0,0,0,.45);
   display:none;
   justify-content:center;
-  align-items:center;
+  align-items:flex-end; /* 모바일 bottom sheet 느낌 */
+  padding:10px;
 }
 
 .box{
-  background:#fff;
-  width:95%;
-  max-height:90vh;
+  background:var(--card);
+  width:min(720px, 100%);
+  max-height:92vh;
   overflow:auto;
-  border-radius:16px;
-  padding:16px;
+  border-radius:22px;
+  padding:14px 14px 16px;
+  box-shadow:var(--shadow);
+  transform:translateY(0);
+  animation:sheetIn .14s ease-out;
+}
+@keyframes sheetIn{
+  from{ transform:translateY(14px); opacity:.7; }
+  to{ transform:translateY(0); opacity:1; }
 }
 
 .row{
   display:flex;
   gap:10px;
   align-items:center;
-  margin-bottom:6px;
+  margin-bottom:8px;
   flex-wrap:wrap;
 }
 
-input{
-  width:70px;
-  text-align:center;
-  font-weight:800;
-  font-size:1rem;
-}
-
-input[data-long]{width:260px;}
+.row.center{ justify-content:center; }
+.row.actions{ margin-top:12px; }
 
 .section{
   margin-top:14px;
+  background:var(--card2);
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 6px 14px rgba(0,0,0,.10);
 }
 
 .section-title{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  font-weight:900;
+  font-weight:1000;
+  margin-bottom:8px;
+  letter-spacing:.2px;
 }
 
 .time{
-  color:red;
-  font-weight:900;
+  color:#d20000;
+  font-weight:1000;
   cursor:pointer;
   user-select:none;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(210,0,0,.08);
 }
+
+label.chk{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:1000;
+  padding:10px 12px;
+  border-radius:16px;
+  background:var(--card2);
+  box-shadow:0 6px 14px rgba(0,0,0,.10);
+}
+
+input{
+  width:72px;
+  text-align:center;
+  font-weight:950;
+  font-size:1.02rem;
+  padding:10px 10px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.10);
+  background:rgba(255,255,255,.95);
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+input:focus{
+  border-color:rgba(0,0,0,.35);
+  box-shadow:0 0 0 4px rgba(0,0,0,.08);
+}
+input[data-long]{ width: min(320px, 100%); }
 
 textarea{
   width:100%;
-  height:70px;
-  margin-top:6px;
-  font-weight:700;
+  height:78px;
+  margin-top:8px;
+  font-weight:800;
+  font-size:1rem;
+  padding:12px;
+  border-radius:16px;
+  border:1px solid rgba(0,0,0,.10);
+  background:rgba(255,255,255,.95);
+  outline:none;
+  resize:none;
+}
+textarea:focus{
+  border-color:rgba(0,0,0,.35);
+  box-shadow:0 0 0 4px rgba(0,0,0,.08);
 }
 
 /* photo */
@@ -130,11 +251,17 @@ textarea{
   align-items:center;
   z-index:999;
 }
-
 #photoLayer img{
   max-width:100%;
   max-height:100%;
   transform:scale(1);
+}
+
+/* 작은 화면에서 타이포/간격 조정 */
+@media (max-width:380px){
+  header{ font-size:1.9rem; }
+  button{ padding:11px 14px; font-size:1rem; }
+  .badge{ font-size:.9rem; }
 }
 </style>
 </head>
@@ -156,17 +283,16 @@ textarea{
 <div class="modal" id="modal">
   <div class="box">
 
-    <div class="row" style="justify-content:center">
-      <input type="checkbox" id="inChk"> INBOUND
-      <span style="width:30px"></span>
-      <input type="checkbox" id="outChk"> OUTBOUND
+    <div class="row center" style="margin-bottom:10px;">
+      <label class="chk"><input type="checkbox" id="inChk"> INBOUND</label>
+      <label class="chk"><input type="checkbox" id="outChk"> OUTBOUND</label>
     </div>
 
     <div id="sections"></div>
 
-    <div class="row">
-      <button onclick="saveMemo()">SAVE</button>
-      <button onclick="closeModal()">CLOSE</button>
+    <div class="row actions">
+      <button style="flex:1" onclick="saveMemo()">SAVE</button>
+      <button style="flex:1" onclick="closeModal()">CLOSE</button>
     </div>
 
   </div>
@@ -219,7 +345,6 @@ function makeSection(type){
   d.innerHTML=`
     <div class="section-title">
       ${type}
-      <!-- 시간: 탭(클릭)=현재시간 저장 / 더블탭=수정 -->
       <span class="time"
         data-k="${type}-time"
         onclick="this.textContent=now()"
@@ -279,8 +404,6 @@ function saveMemo(){
 
   document.querySelectorAll("[data-k]").forEach(el=>{
     const k=el.dataset.k;
-
-    // span(time)은 textContent 저장
     if(el.tagName==="SPAN"){
       data[k]=el.textContent;
     }else{
@@ -288,7 +411,6 @@ function saveMemo(){
     }
   });
 
-  // 기존 데이터 호환(옛날 B 키가 있으면 bb로 흡수)
   ["INBOUND","OUTBOUND"].forEach(t=>{
     const oldKey = `${t}-b`;
     const newKey = `${t}-bb`;
@@ -313,21 +435,23 @@ function renderList(){
     const num = m.NUM || "";
     const hl  = m.HL  || "";
 
-    const inLine = (m["INBOUND-c7"] || hl || num)
-      ? `IN 7C[${m["INBOUND-c7"]||""}] HL[${hl}] #[${num}]`
+    const inLineText  = (m["INBOUND-c7"] || hl || num)
+      ? `7C[${m["INBOUND-c7"]||""}] HL[${hl}] #[${num}]`
       : "";
 
-    const outLine = (m["OUTBOUND-c7"] || num)
-      ? `OUT 7C[${m["OUTBOUND-c7"]||""}] #[${num}]`
+    const outLineText = (m["OUTBOUND-c7"] || num)
+      ? `7C[${m["OUTBOUND-c7"]||""}] #[${num}]`
       : "";
+
+    const inRow  = inLineText  ? `<div class="line"><span class="badge"><span class="tag">IN</span> ${inLineText}</span></div>` : "";
+    const outRow = outLineText ? `<div class="line"><span class="badge"><span class="tag">OUT</span> ${outLineText}</span></div>` : "";
 
     memoList.innerHTML+=`
       <div class="memo">
         <input type="checkbox">
         <div class="memo-title" onclick="editMemo(${m.id})">
-          ${inLine ? `<div class="line">${inLine}</div>` : ""}
-          ${outLine ? `<div class="line">${outLine}</div>` : ""}
-          ${(!inLine && !outLine) ? `<div class="line">NEW MEMO</div>` : ""}
+          ${inRow}${outRow}
+          ${(!inRow && !outRow) ? `<div class="line"><span class="badge"><span class="tag">NEW</span> MEMO</span></div>` : ""}
         </div>
       </div>`;
   });
@@ -345,7 +469,6 @@ function editMemo(id){
   document.querySelectorAll("[data-k]").forEach(el=>{
     const k=el.dataset.k;
 
-    // 옛날 B 키 호환
     let v = m[k];
     if(v==null && k.endsWith("-bb")){
       const old = k.replace("-bb","-b");
