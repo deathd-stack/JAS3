@@ -5,7 +5,7 @@
 <meta name="viewport"
 content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
-<title>JAS MEMO VER 2</title>
+<title>JAS MEMO VER.3</title>
 
 <style>
 :root{
@@ -36,7 +36,7 @@ header{
   padding:18px 14px 10px;
   font-size:2.05rem;
   font-weight:950;
-  cursor:pointer;
+  cursor:default; /* 사진 여백 더블클릭으로 변경 */
   letter-spacing:.5px;
   color:#111;
   text-shadow:0 1px 0 rgba(255,255,255,.35);
@@ -99,7 +99,7 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   display:flex;
   gap:10px;
   align-items:center;
-  justify-content:space-between; /* 한 줄에서 간격 정렬 */
+  justify-content:space-between;
   margin:2px 0;
   white-space:nowrap;
 }
@@ -127,8 +127,6 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   color:#fff;
 }
 
-.badge .muted{ color:var(--muted); font-weight:900; }
-
 /* modal */
 .modal{
   position:fixed;
@@ -136,7 +134,7 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   background:rgba(0,0,0,.45);
   display:none;
   justify-content:center;
-  align-items:flex-end; /* 모바일 bottom sheet 느낌 */
+  align-items:flex-end;
   padding:10px;
 }
 
@@ -164,7 +162,11 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   flex-wrap:wrap;
 }
 
-.row.center{ justify-content:center; }
+.row.center{
+  justify-content:center;
+  flex-wrap:nowrap;            /* ✅ IN/OUT 한줄 고정 */
+  gap:8px;
+}
 .row.actions{ margin-top:12px; }
 
 .section{
@@ -197,13 +199,19 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
 label.chk{
   display:flex;
   align-items:center;
+  justify-content:center;
   gap:8px;
   font-weight:1000;
   padding:10px 12px;
   border-radius:16px;
   background:var(--card2);
   box-shadow:0 6px 14px rgba(0,0,0,.10);
+  flex:1;              /* ✅ 두개가 한줄에 딱 맞게 */
+  min-width:0;
+  white-space:nowrap;
 }
+
+label.chk input{ transform:scale(1.05); }
 
 input{
   width:72px;
@@ -257,20 +265,20 @@ textarea:focus{
   transform:scale(1);
 }
 
-/* 작은 화면에서 타이포/간격 조정 */
 @media (max-width:380px){
   header{ font-size:1.9rem; }
   button{ padding:11px 14px; font-size:1rem; }
   .badge{ font-size:.9rem; }
+  label.chk{ padding:9px 10px; font-size:.98rem; }
 }
 </style>
 </head>
 
 <body>
 
-<header onclick="openPhoto()">JAS MEMO VER 2</header>
+<header>JAS MEMO VER 2</header>
 
-<div class="controls">
+<div class="controls" id="controls">
   <button onclick="newMemo()">ADD</button>
   <button onclick="deleteSelected()">DELETE</button>
   <button onclick="addPhoto()">PHOTO</button>
@@ -310,6 +318,7 @@ const memoList = document.getElementById("memoList");
 const photoInput = document.getElementById("photoInput");
 const photoLayer = document.getElementById("photoLayer");
 const photoImg = document.getElementById("photoImg");
+const controls = document.getElementById("controls");
 
 let memos = JSON.parse(localStorage.getItem("jas_memos")||"[]");
 let editId=null;
@@ -321,15 +330,23 @@ function now(){
   return d.toLocaleTimeString("ko-KR",{hour12:false,hour:"2-digit",minute:"2-digit"});
 }
 
+function setControlsVisible(v){
+  controls.style.display = v ? "flex" : "none";  // ✅ 메모 작성시 상단 ADD/DELETE/PHOTO 숨김
+}
+
 function newMemo(){
   editId=null;
   inChk.checked=false;
   outChk.checked=false;
   sections.innerHTML="";
+  setControlsVisible(false);
   modal.style.display="flex";
 }
 
-function closeModal(){ modal.style.display="none"; }
+function closeModal(){
+  modal.style.display="none";
+  setControlsVisible(true);
+}
 
 inChk.onchange = outChk.onchange = renderSections;
 
@@ -460,6 +477,7 @@ function renderList(){
 function editMemo(id){
   editId=id;
   const m=memos.find(x=>x.id===id);
+  setControlsVisible(false);
   modal.style.display="flex";
 
   inChk.checked=!!m["INBOUND-c7"];
@@ -497,9 +515,22 @@ photoInput.onchange=e=>{
   const f=e.target.files[0];
   if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{ photo=r.result; localStorage.setItem("jas_photo",photo); };
+  r.onload=()=>{
+    photo=r.result;
+    localStorage.setItem("jas_photo",photo);
+  };
   r.readAsDataURL(f);
 };
+
+// ✅ 사진 불러오기: "여백 더블클릭(더블탭)" 으로 변경
+document.addEventListener("dblclick",(e)=>{
+  if(!photo) return;
+  if(modal.style.display==="flex") return;          // 작성중엔 안열기
+  if(photoLayer.style.display==="flex") return;     // 이미 열려있으면 패스
+  if(e.target.closest("#memoList")) return;         // 메모 영역은 제외(여백만)
+  if(e.target.closest(".controls")) return;         // 버튼 바 제외
+  openPhoto();
+});
 
 function openPhoto(){
   if(!photo) return;
