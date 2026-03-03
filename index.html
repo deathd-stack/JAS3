@@ -27,7 +27,6 @@ body{
   padding-bottom:22px;
 }
 
-/* 헤더 */
 header{
   text-align:center;
   padding:18px 14px 10px;
@@ -40,7 +39,6 @@ header{
   text-shadow:0 1px 0 rgba(255,255,255,.35);
 }
 
-/* 상단 컨트롤 */
 .controls{
   position:sticky;
   top:0;
@@ -70,7 +68,6 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
 
 #memoList{ padding:10px 12px; }
 
-/* 메모 카드 */
 .memo{
   background:var(--card);
   border-radius:var(--radius);
@@ -169,49 +166,30 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   background:rgba(0,0,0,.18);
 }
 
-/* ✅ IN/OUT 토글 (한줄, 겹침 없음) */
-.toggle-row{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  margin:0 0 10px;
-}
-.tbtn{
-  flex:1;
+/* ✅ 체크 한칸 + 글자 (한줄) */
+.checkline{
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:8px;
-  padding:12px 12px;
+  gap:22px;                 /* IN / OUT 사이 간격 */
+  margin:0 0 12px;
+  padding:10px 12px;
   border-radius:18px;
   background:rgba(0,0,0,.05);
   box-shadow:0 6px 14px rgba(0,0,0,.08);
+}
+.checkline label{
+  display:flex;
+  align-items:center;
+  gap:10px;                 /* 체크박스 - 글자 간격 */
   font-weight:1000;
   user-select:none;
-}
-.tbtn input{ display:none; } /* 실제 체크박스 숨김 */
-.tbtn .dot{
-  width:18px;
-  height:18px;
-  border-radius:6px;
-  border:2px solid rgba(0,0,0,.25);
-  background:#fff;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  line-height:1;
-}
-.tbtn.active{
-  background:rgba(0,0,0,.08);
-}
-.tbtn.active .dot{
-  border-color:#0a84ff;
-  background:#0a84ff;
-  color:#fff;
-}
-.tbtn .txt{
   white-space:nowrap;
+}
+.checkline input[type="checkbox"]{
+  width:22px;
+  height:22px;
+  accent-color:#0a84ff;
 }
 
 /* 섹션 */
@@ -232,7 +210,6 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   letter-spacing:.2px;
 }
 
-/* 시간 칩 */
 .time{
   color:#d20000;
   font-weight:1000;
@@ -244,10 +221,10 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   border:1px solid rgba(210,0,0,.15);
 }
 
-/* ✅ 칸 정리용 그리드 */
+/* 그리드 */
 .pair-row{
   display:grid;
-  grid-template-columns: 34px 1fr 34px 1fr 34px 1fr; /* 라벨+입력 x3 */
+  grid-template-columns: 34px 1fr 34px 1fr 34px 1fr;
   gap:10px;
   align-items:center;
   margin-bottom:10px;
@@ -262,18 +239,22 @@ button:active{ transform:scale(.98); filter:brightness(.98); }
   white-space:nowrap;
 }
 
-/* ✅ 글자 안 씹히게: 높이/line-height/패딩/폰트 조정 */
+/* ✅ iOS 숫자 잘림 해결 세팅 */
 input{
   width:100%;
-  height:48px;
-  padding:12px 12px;
+  height:50px;
+  padding:10px 12px;          /* 위아래 너무 크면 잘림 */
   border-radius:16px;
   border:1px solid rgba(0,0,0,.12);
   background:rgba(255,255,255,.98);
   outline:none;
+
   font-weight:950;
-  font-size:1.08rem;
-  line-height:1.1;
+  font-size:1.10rem;
+  line-height:1.2;            /* ✅ 핵심 */
+  letter-spacing:.2px;
+  font-variant-numeric: tabular-nums; /* ✅ 숫자 폭 일정 + 잘림 덜함 */
+
   text-align:center;
   appearance:none;
   -webkit-appearance:none;
@@ -283,7 +264,7 @@ input:focus{
   box-shadow:0 0 0 4px rgba(0,0,0,.08);
 }
 
-/* ✅ CMPT 왼쪽 정렬 + 입력 내용도 왼쪽 */
+/* CMPT */
 .cmpt-row{
   display:grid;
   grid-template-columns: 92px 1fr;
@@ -353,14 +334,14 @@ textarea:focus{
   touch-action:none;
 }
 
-/* 작은 화면 보정 */
+/* 작은 화면 */
 @media (max-width:380px){
   header{ font-size:1.85rem; }
   button{ padding:11px 14px; font-size:.98rem; }
-  .badge{ font-size:.90rem; }
   .pair-row{ gap:8px; grid-template-columns: 30px 1fr 30px 1fr 30px 1fr; }
   .cmpt-row{ grid-template-columns: 86px 1fr; }
-  input{ height:46px; border-radius:14px; font-size:1.06rem; }
+  input{ height:48px; border-radius:14px; font-size:1.08rem; }
+  .checkline{ gap:18px; }
 }
 </style>
 </head>
@@ -385,18 +366,10 @@ textarea:focus{
       <div class="handle"></div>
     </div>
 
-    <!-- ✅ 한 줄 토글 -->
-    <div class="toggle-row">
-      <label class="tbtn" id="inBtn">
-        <input type="checkbox" id="inChk">
-        <span class="dot">✓</span>
-        <span class="txt">INBOUND</span>
-      </label>
-      <label class="tbtn" id="outBtn">
-        <input type="checkbox" id="outChk">
-        <span class="dot">✓</span>
-        <span class="txt">OUTBOUND</span>
-      </label>
+    <!-- ✅ 체크 한칸 띄고 IN 체크 한칸 띄고 OUT (한줄) -->
+    <div class="checkline">
+      <label><input type="checkbox" id="inChk"> INBOUND</label>
+      <label><input type="checkbox" id="outChk"> OUTBOUND</label>
     </div>
 
     <div id="sections"></div>
@@ -425,8 +398,6 @@ const photoImg = document.getElementById("photoImg");
 const titleBtn = document.getElementById("titleBtn");
 const controls = document.getElementById("controls");
 
-const inBtn = document.getElementById("inBtn");
-const outBtn = document.getElementById("outBtn");
 const inChk = document.getElementById("inChk");
 const outChk = document.getElementById("outChk");
 
@@ -448,17 +419,11 @@ function setControlsVisible(v){
   controls.style.display = v ? "flex" : "none";
 }
 
-function syncToggleUI(){
-  inBtn.classList.toggle("active", inChk.checked);
-  outBtn.classList.toggle("active", outChk.checked);
-}
-
 /* ---------- MEMO ---------- */
 function newMemo(){
   editId=null;
   inChk.checked=false;
   outChk.checked=false;
-  syncToggleUI();
   sections.innerHTML="";
   setControlsVisible(false);
   modal.style.display="flex";
@@ -471,10 +436,7 @@ function closeModal(){
   sheet.style.transform = "translateY(0)";
 }
 
-inChk.onchange = outChk.onchange = ()=>{
-  syncToggleUI();
-  renderSections();
-};
+inChk.onchange = outChk.onchange = renderSections;
 
 function renderSections(){
   sections.innerHTML="";
@@ -602,7 +564,6 @@ function editMemo(id){
 
   inChk.checked=!!m["INBOUND-c7"];
   outChk.checked=!!m["OUTBOUND-c7"];
-  syncToggleUI();
   renderSections();
 
   document.querySelectorAll("[data-k]").forEach(el=>{
