@@ -521,17 +521,7 @@ photoInput.onchange=e=>{
   r.readAsDataURL(f);
 };
 
-/* ===== iOS 안정 더블탭 감지 ===== */
-function makeDoubleTapHandler(fn){
-  let last = 0;
-  return function(){
-    const t = Date.now();
-    if(t - last < 330){ fn(); last = 0; }
-    else last = t;
-  };
-}
-
-/* 사진 열기 */
+/* ===== 사진 열기/닫기 (iOS 안정판) ===== */
 function openPhoto(){
   if(!photo) return;
   scale=1;
@@ -539,40 +529,45 @@ function openPhoto(){
   photoImg.style.transform="scale(1)";
   photoLayer.style.display="block";
 }
-
-/* 사진 닫기 */
 function closePhoto(){
   photoLayer.style.display="none";
   scale=1;
 }
 
-/* ✅ 여백 더블탭 → 사진 열기 (dblclick + touch 더블탭 둘 다) */
-const openByDoubleTap = makeDoubleTapHandler(()=>{
+/* 여백 더블탭 → 사진 열기 */
+let lastBgTap = 0;
+function tryOpenByDoubleTap(target){
+  const t = Date.now();
+  if(t - lastBgTap > 350){ lastBgTap = t; return; }
+  lastBgTap = 0;
+
   if(!photo) return;
   if(modal.style.display==="flex") return;
   if(photoLayer.style.display==="block") return;
-
-  // 메모/버튼 영역은 제외(여백만)
-  const target = window.__lastTapTarget || document.body;
   if(target.closest && (target.closest("#memoList") || target.closest(".controls"))) return;
 
   openPhoto();
-});
+}
+document.addEventListener("touchend",(e)=>tryOpenByDoubleTap(e.target), {passive:true});
+document.addEventListener("dblclick",(e)=>tryOpenByDoubleTap(e.target));
 
-document.addEventListener("dblclick",(e)=>{
-  window.__lastTapTarget = e.target;
-  openByDoubleTap();
-});
-document.addEventListener("touchend",(e)=>{
-  window.__lastTapTarget = e.target;
-  openByDoubleTap();
+/* ✅ 사진 더블탭 → 닫기 */
+let lastImgTap = 0;
+photoImg.addEventListener("touchend",(e)=>{
+  e.stopPropagation(); // 열기쪽 더블탭과 충돌 방지
+  const t = Date.now();
+  if(t - lastImgTap <= 350){
+    lastImgTap = 0;
+    closePhoto();
+  }else{
+    lastImgTap = t;
+  }
 }, {passive:true});
 
-/* ✅ 사진 더블탭 → 닫기 (iOS용) */
-const closeByDoubleTap = makeDoubleTapHandler(()=>closePhoto());
-
-photoImg.addEventListener("dblclick",()=>closeByDoubleTap());
-photoImg.addEventListener("touchend",()=>closeByDoubleTap(), {passive:true});
+photoImg.addEventListener("dblclick",(e)=>{
+  e.stopPropagation();
+  closePhoto();
+});
 
 /* (유지) 휠 확대/축소 */
 photoLayer.onwheel=e=>{
