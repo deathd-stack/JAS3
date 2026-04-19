@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>JAS MEMO VER 6.4.9</title>
+<title>JAS MEMO VER 6.4.13</title>
 
 <style>
   :root{
@@ -1013,16 +1013,21 @@
       font-size:14px;
     }
   }
+
   .cmptArea{
-    width:100%;
-    min-height:calc(54px * var(--ui));
-    height:calc(54px * var(--ui));
-    resize:none;
-    overflow:hidden;
-    line-height:1.35;
+    flex:1;
+    min-width:0;
+    font-size:calc(16px * var(--ui));
+    font-weight:1000;
     padding:calc(14px * var(--ui)) calc(16px * var(--ui));
     text-align:left;
     text-transform:uppercase;
+    resize:none;
+    overflow:hidden;
+    min-height:calc(54px * var(--ui));
+    height:calc(54px * var(--ui));
+    line-height:1.25;
+    border-radius:calc(22px * var(--ui));
   }
 
 </style>
@@ -1033,7 +1038,7 @@
 <header id="homeHeader" onclick="openPhoto()" ondblclick="openPhoto()">
   <div class="titleWrap">
     <div class="titleMain">JAS MEMO</div>
-    <div class="titleVer">VER 6.4.9</div>
+    <div class="titleVer">VER 6.4.13</div>
   </div>
 </header>
 
@@ -1203,7 +1208,7 @@
   let globalCalcExpr = "";
   let activeCalcInput = null;
 
-  const EXTRA_KEYS = ["W","C","COB","GB","TS","EMS","RUSH","CARSEAT","COMAT","STRAP","LONGFIN","CYCLE","CREW"];
+  const EXTRA_KEYS = ["W","C","COB","GB","TS","EMS","RUSH","CARSEAT","COMAT","STRAP","LONGFIN","CYCLE","CREW","PCB"];
 
   function onlyNum(val, len){
     return (val || "").replace(/[^0-9]/g, "").slice(0, len);
@@ -1724,7 +1729,7 @@
       }
 
       const gi = (k)=> root.querySelector(`input[data-k="${type}-${k}"]`);
-      const cm = (n)=> root.querySelector(`input[data-k="${type}-cmpt${n}"]`);
+      const cm = (n)=> root.querySelector(`[data-k="${type}-cmpt${n}"]`);
       const note = root.querySelector(`textarea[data-k="${type}-note"]`);
 
       data[type+"-7C"] = pad(gi("7C")?.value || "", 4);
@@ -2125,374 +2130,325 @@
   updateEquipBadge();
   syncPhotoFromStorage(false);
   updateGlobalCalcDisplay("0");
+  function smartUpper(v){
+    return (v || "").replace(/\s+/g, " ").trim().toUpperCase();
+  }
 
-  const EXTRA_KEYS_V649 = ["W","C","COB","GB","TS","EMS","RUSH","CARSEAT","COMAT","STRAP","LONGFIN","CYCLE","CREW","PCB"];
-
-  function autoGrowTextarea(el){
+  function autoResizeTextarea(el){
     if(!el) return;
     el.style.height = "calc(54px * var(--ui))";
     el.style.height = Math.max(el.scrollHeight, 54) + "px";
   }
 
-  function cleanCmptSegment(seg){
-    let s = cleanTextUpper(seg || "").replace(/^[-,\s]+|[-,\s]+$/g, "");
-    if(!s) return "";
-    if(/^FAK\b/.test(s)) return "";
-
-    s = s.replace(/\b(BAG)\s+(\d+)\s*(?:PCS?|PC)\s+\d+\s*KG\b/g, "$1 $2PC");
-    s = s.replace(/\b(CGO|MAIL|POS|EMS)\s+(\d+)\s*(?:PCS?|PC)\s+\d+\s*KG\b/g, "$1 $2PC");
-    s = s.replace(/\b(WCHR|COB|G\/B|GB|TS|T\/S|RUSH|CARSEAT|COMAT|LONGFIN|CYCLE|CREW|PCB)\s+(\d+)\s*(?:PCS?|PC)\s+\d+\s*KG\b/g, "$1 $2PC");
-    s = s.replace(/\b(D\/S)\s+(\d+)\s*(?:PCS?|PC)\s+\d+\s*KG\b/g, "$1 $2PCS");
-    s = s.replace(/\s+/g, " ").trim();
-    s = s.replace(/\s+,/g, ",").replace(/,+/g, ",").replace(/,\s*,/g, ", ");
-    return s;
+  function normalizeForParse(txt){
+    return (txt || "")
+      .replace(/\r/g, "")
+      .replace(/[‐‑–—]/g, "-")
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/[ \t]+/g, " ")
+      .trim();
   }
 
-  function parseCountByKeyword(text, keywords){
-    const arr = Array.isArray(keywords) ? keywords : [keywords];
-    let total = 0;
-    for(const kw of arr){
-      const re = new RegExp("(?:^|[^A-Z])" + kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*(\\d+)\\s*(?:PCS?|PC)\\b", "gi");
-      let m;
-      while((m = re.exec(text))){ total += Number(m[1] || 0); }
+  function stripFakSegments(s){
+    let out = s || "";
+    out = out.replace(/(?:^|,\s*)FAK\s+\d+(?:\.\d+)?\s*KG\b/gi, "");
+    out = out.replace(/,\s*,/g, ", ");
+    out = out.replace(/^,\s*|\s*,\s*$/g, "");
+    out = out.replace(/\s{2,}/g, " ").trim();
+    return out;
+  }
+
+  function normalizeBagSegment(seg){
+    return smartUpper(seg);
+  }
+
+  function normalizeCmptContent(s){
+    let out = smartUpper(s)
+      .replace(/\bN\s+MAIL\b/g, "MAIL")
+      .replace(/\bLDD IN CPT\d\b/g, "")
+      .replace(/\s*,\s*/g, ", ")
+      .replace(/\s{2,}/g, " ")
+      .replace(/,\s*,/g, ", ")
+      .trim();
+
+    out = stripFakSegments(out);
+    return out.replace(/\s{2,}/g, " ").trim() || "NIL";
+  }
+
+  function appendToLast(lines, extra){
+    if(!extra) return;
+    if(!lines.length){
+      lines.push(extra);
+    }else{
+      lines[lines.length - 1] = (lines[lines.length - 1] + " " + extra).replace(/\s{2,}/g, " ").trim();
     }
-    return total;
   }
 
-  function parseKeywordExtra(text, patterns){
-    let total = 0;
-    for(const p of patterns){
-      const re = new RegExp("(?:^|[^A-Z])" + p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*(\\d+)\\s*(?:PCS?|PC)\\b", "gi");
-      let m;
-      while((m = re.exec(text))){ total += Number(m[1] || 0); }
-    }
-    return total;
-  }
+  function splitMainAndSi(noteText){
+    const rawLines = normalizeForParse(noteText).split("\n").map(v=>v.trim()).filter(Boolean);
+    const mainLines = [];
+    const siLines = [];
+    let inSi = false;
 
-  function parseNotePayload(noteText){
-    const raw = String(noteText || "").replace(/\r/g, "");
-    const lines = raw.split("\n");
-    const cmpt = {1:"",2:"",3:"",4:""};
-    let current = 0;
-    const workingLines = [];
+    for(let line of rawLines){
+      const upper = line.toUpperCase();
 
-    for(let line of lines){
-      let u = cleanTextUpper(line);
-      if(!u) continue;
-      const m = u.match(/^CPT\s*([1-4])\s*[-:–]\s*(.*)$/);
-      if(m){
-        current = Number(m[1]);
-        cmpt[current] = cleanCmptSegment(m[2]);
-        workingLines.push(u);
+      if(/^SI(?:\s|$)/.test(upper)){
+        if(upper === "SI"){
+          inSi = true;
+          continue;
+        }
+        line = line.replace(/^SI\s*/i, "").trim();
+        inSi = true;
+      }
+
+      if(/^END$/i.test(upper)) break;
+
+      if(/^-/.test(line)){
+        line = line.replace(/^-+\s*/, "").trim();
+        if(inSi) appendToLast(siLines, line);
+        else appendToLast(mainLines, line);
         continue;
       }
-      if(/^[-•]/.test(u) && current){
-        const addon = cleanCmptSegment(u.replace(/^[-•]+\s*/, ""));
-        if(addon){ cmpt[current] = (cmpt[current] ? cmpt[current] + " " : "") + addon; }
-        workingLines.push(u);
-      }
+
+      if(inSi) siLines.push(line);
+      else mainLines.push(line);
     }
 
-    const joined = workingLines.join(" \n ");
-    const t = parseCountByKeyword(joined, ["BAG"]);
-    const d = parseCountByKeyword(joined, ["D/S","DS"]);
-    const bbMatch = joined.match(/\bBBST\s*(\d+)\b/i);
-    const bb = bbMatch ? Number(bbMatch[1]) : 0;
+    return { mainLines, siLines };
+  }
 
+  function parseCptBlocks(noteText){
+    const { mainLines, siLines } = splitMainAndSi(noteText);
+    const cpts = { 1:"", 2:"", 3:"", 4:"" };
+    const mainText = (mainLines || []).join("
+").replace(/
+/g, "");
+    const blocks = mainText.match(/CPT\s*[1-4]\s*-?[\s\S]*?(?=
+\s*CPT\s*[1-4]\s*-?|$)/gi) || [];
+
+    blocks.forEach(block=>{
+      const m = block.match(/^\s*CPT\s*([1-4])\s*-?\s*([\s\S]*)$/i);
+      if(!m) return;
+      const idx = Number(m[1]);
+      const body = (m[2] || "")
+        .split("
+")
+        .map(v=>v.trim())
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      cpts[idx] = normalizeCmptContent(body);
+    });
+
+    Object.keys(cpts).forEach(k=>{
+      if(!cpts[k]) cpts[k] = "NIL";
+    });
+
+    return { cpts, siLines };
+  }
+
+  function extractBagTotal(lines){
+    let total = 0;
+    (lines || []).forEach(v=>{
+      const s = smartUpper(v);
+      let m;
+      const re = /\bBAG\s+(\d+)\s*P(?:C|CS)\b/g;
+      while((m = re.exec(s)) !== null){
+        total += Number(m[1] || 0);
+      }
+    });
+    return total ? String(total) : "";
+  }
+
+  function extractDsTotal(lines){
+    let total = 0;
+    (lines || []).forEach(v=>{
+      const s = smartUpper(v);
+      let m;
+      const re = /\bD\/?S\s+(\d+)\s*P(?:C|CS)\b/g;
+      while((m = re.exec(s)) !== null){
+        total += Number(m[1] || 0);
+      }
+    });
+    return total ? String(total) : "";
+  }
+
+  function extractBbstValue(lines){
+    for(const v of (lines || [])){
+      const s = smartUpper(v);
+      const m = s.match(/\b(?:BBST|BB)\s*[:\/-]?\s*(\d+)\b/);
+      if(m) return m[1];
+    }
+    return "";
+  }
+
+  function collectExtraMatches(lines, fromSi){
     const extras = [];
-    const pushExtra = (key, val) => {
-      if(!val) return;
-      const found = extras.find(x => x.key === key);
-      if(found) found.val = String(Number(found.val || 0) + Number(val));
-      else extras.push({ key, val: String(val) });
+    const add = (key, val)=>{
+      const num = String(val || "").replace(/[^0-9]/g, "");
+      if(!num) return;
+      const exKey = String(key || "").toUpperCase();
+      const found = extras.find(x => x.key === exKey);
+      if(found){
+        found.val = String(Number(found.val || 0) + Number(num));
+      }else{
+        extras.push({ key: exKey, val: num });
+      }
     };
 
-    pushExtra("C", parseKeywordExtra(joined, ["CGO"]));
-    pushExtra("EMS", parseKeywordExtra(joined, ["MAIL","POS","EMS"]));
-    pushExtra("W", parseKeywordExtra(joined, ["WCHR"]));
-    pushExtra("COB", parseKeywordExtra(joined, ["COB"]));
-    pushExtra("GB", parseKeywordExtra(joined, ["G/B","GB"]));
-    pushExtra("TS", parseKeywordExtra(joined, ["T/S","TS"]));
-    pushExtra("RUSH", parseKeywordExtra(joined, ["RUSH"]));
-    pushExtra("CARSEAT", parseKeywordExtra(joined, ["CARSEAT"]));
-    pushExtra("COMAT", parseKeywordExtra(joined, ["COMAT"]));
-    pushExtra("LONGFIN", parseKeywordExtra(joined, ["LONGFIN"]));
-    pushExtra("CYCLE", parseKeywordExtra(joined, ["CYCLE"]));
-    pushExtra("CREW", parseKeywordExtra(joined, ["CREW"]));
-    pushExtra("PCB", parseKeywordExtra(joined, ["PCB"]));
+    const joined = lines.map(smartUpper).join("\n");
 
-    for(const k of [1,2,3,4]) cmpt[k] = cmpt[k].replace(/\s{2,}/g, " ").trim();
+    let m;
+    const cgoRe = /\bCGO\s+(\d+)\s*P(?:C|CS)\b/g;
+    while((m = cgoRe.exec(joined)) !== null) add("C", m[1]);
 
-    return { cmpt, t, d, bb, extras };
-  }
+    const emsRe = /\b(?:MAIL|POS|EMS)\s+(\d+)\s*P(?:C|CS)\b/g;
+    while((m = emsRe.exec(joined)) !== null) add("EMS", m[1]);
 
-  function applyParsedNoteToSection(root, type, noteText){
-    const parsed = parseNotePayload(noteText);
-    for(const n of [1,2,3,4]){
-      const el = root.querySelector(`[data-k="${type}-cmpt${n}"]`);
-      if(el && parsed.cmpt[n]){
-        el.value = parsed.cmpt[n];
-        autoGrowTextarea(el);
+    const btRe = /\bBT\b[\s,/-]*BAG\s+(\d+)\s*P(?:C|CS)\b/g;
+    while((m = btRe.exec(joined)) !== null) add("TS", m[1]);
+
+    const simpleMap = [
+      ["WCHR","W"], ["COB","COB"], ["G/B","GB"], ["TS","TS"], ["T/S","TS"],
+      ["RUSH","RUSH"], ["CARSEAT","CARSEAT"], ["COMAT","COMAT"], ["LONGFIN","LONGFIN"],
+      ["CYCLE","CYCLE"], ["CREW","CREW"], ["PCB","PCB"]
+    ];
+
+    if(!fromSi){
+      for(const [pattern, key] of simpleMap){
+        const esc = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace("/", "\\/");
+        const re = new RegExp(`\\b${esc}\\b(?:\\s+(\\d+))?`, "g");
+        while((m = re.exec(joined)) !== null){
+          add(key, m[1] || "1");
+        }
       }
-    }
-    const setNum = (k, val, max) => {
-      if(!val) return;
-      const el = root.querySelector(`input[data-k="${type}-${k}"]`);
-      if(el) el.value = String(val).slice(0,max);
-    };
-    setNum("t", parsed.t, 3);
-    setNum("d", parsed.d, 2);
-    setNum("bb", parsed.bb, 2);
-
-    const box = root.querySelector(`#${type}-EXTRAS`);
-    if(box){
-      box.innerHTML = "";
-      parsed.extras.forEach(ex => box.appendChild(makeExtraRow(type, ex.key, ex.val)));
-    }
-  }
-
-  makeExtraRow = function(type, key="CREW", val=""){
-    const row = document.createElement("div");
-    row.className = "extraRow";
-    row.innerHTML = `
-      <select>
-        ${EXTRA_KEYS_V649.map(k => `<option value="${k}" ${k===key ? "selected" : ""}>${k}</option>`).join("")}
-      </select>
-      <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="extraVal-${type}" value="${onlyNum(val,3)}">
-      <button type="button" class="minusBtn" onclick="this.parentElement.remove()">-</button>
-    `;
-    return row;
-  };
-
-  addExtraRow = function(type){
-    const root = sections.querySelector(`.section[data-type="${type}"]`);
-    const box = root ? root.querySelector(`#${type}-EXTRAS`) : null;
-    if(!box) return;
-    box.appendChild(makeExtraRow(type, "CREW", ""));
-  };
-
-  makeSection = function(type, memoData){
-    const d = document.createElement("div");
-    d.className = "section";
-    d.dataset.type = type;
-
-    const savedTime = memoData ? (memoData[type+"-TIME"] || "") : "";
-    const local7C = memoData ? (memoData[type+"-7C"] || "") : "";
-    const sharedHL = memoData ? (memoData.sharedHL || "") : "";
-    const sharedHASH = memoData ? (memoData.sharedHASH || "") : "";
-    const v = (k)=> memoData ? (memoData[type+"-"+k] || "") : "";
-    const noteV = memoData ? (memoData[type+"-note"] || "") : "";
-
-    const cmpt1Val = memoData ? defaultF(memoData[type+"-cmpt1"]) : "F";
-    const cmpt2Val = memoData ? defaultF(memoData[type+"-cmpt2"]) : "F";
-
-    const staStdLabel = type === "INBOUND" ? "STA" : "STD";
-    const staStdKey = type === "INBOUND" ? "STA" : "STD";
-
-    d.innerHTML = `
-      <div class="sectionHead">
-        <div class="sectionTitle">${type}</div>
-        <div class="headRight">
-          <div class="staStdWrap">
-            <div class="staStdLab">${staStdLabel}</div>
-            <input class="numBox staStdInput" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-${staStdKey}" value="${v(staStdKey)}">
-          </div>
-          <div class="timeWrap">
-            <button type="button" class="timeBtn" data-timebtn="${type}">TIME</button>
-            <div class="timeVal" id="${type}-TIMESHOWN"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="rowGrid3">
-        <div class="lab">7C</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-7C" value="${local7C}">
-        <div class="lab">HL</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="SHARED-HL" value="${sharedHL}">
-        <div class="lab">#</div>
-        <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
-      </div>
-
-      <div class="row">
-        <div class="lab" style="min-width:96px;">CMPT 1</div>
-        <textarea class="long cmptArea" rows="1" data-k="${type}-cmpt1" placeholder="TEXT">${cmpt1Val}</textarea>
-      </div>
-
-      <div class="row">
-        <div class="lab" style="min-width:96px;">CMPT 2</div>
-        <textarea class="long cmptArea" rows="1" data-k="${type}-cmpt2" placeholder="TEXT">${cmpt2Val}</textarea>
-      </div>
-
-      <div class="row">
-        <div class="lab" style="min-width:96px;">CMPT 3</div>
-        <textarea class="long cmptArea" rows="1" data-k="${type}-cmpt3" placeholder="TEXT">${memoData ? (memoData[type+'-cmpt3'] || '') : ''}</textarea>
-      </div>
-
-      <div class="row">
-        <div class="lab" style="min-width:96px;">CMPT 4</div>
-        <textarea class="long cmptArea" rows="1" data-k="${type}-cmpt4" placeholder="TEXT">${memoData ? (memoData[type+'-cmpt4'] || '') : ''}</textarea>
-      </div>
-
-      <div class="rowGridTDBB">
-        <div class="lab">T</div>
-        <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="${type}-t" value="${v("t")}">
-        <div class="lab">D</div>
-        <input class="numBox" inputmode="numeric" maxlength="2" placeholder="00" data-k="${type}-d" value="${v("d")}">
-        <div class="lab">BB</div>
-        <input class="numBox" inputmode="numeric" maxlength="2" placeholder="00" data-k="${type}-bb" value="${v("bb")}">
-      </div>
-
-      ${type === "OUTBOUND" ? `
-      <div class="rowGridTTTB">
-        <div class="lab">T/T</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-tt" value="${v("tt")}">
-        <div class="lab">T/B</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-tb" value="${v("tb")}">
-      </div>
-
-      <div class="lirCalcRow">
-        <div class="lirBtns">
-          <button type="button" class="lirBtn" data-lir-add="${type}">LIR</button>
-          <button type="button" class="lirBtn" data-lir-view="${type}">VIEW</button>
-        </div>
-        <button type="button" class="calcCircleBtn calcIconBtn" data-calc-toggle="${type}">
-          <span class="calcIcon"></span>
-        </button>
-      </div>
-      ` : ""}
-
-      <div class="extraBox">
-        <div class="extraHead">
-          <div class="extraTitle">EXTRA</div>
-          <button type="button" class="iconBtn" onclick="addExtraRow('${type}')">+</button>
-        </div>
-        <div id="${type}-EXTRAS"></div>
-      </div>
-
-      <textarea data-k="${type}-note" placeholder="NOTE (${type})">${noteV}</textarea>
-    `;
-
-    const timeBtn = d.querySelector(`[data-timebtn="${type}"]`);
-    const timeShown = d.querySelector(`#${type}-TIMESHOWN`);
-    bindEditableTime(timeShown, savedTime);
-
-    timeBtn.addEventListener("click", ()=>{ timeShown.textContent = nowTime(); });
-    timeBtn.addEventListener("dblclick", ()=>{
-      const t = askTime(timeShown.textContent || "");
-      if(t !== null) timeShown.textContent = t;
-    });
-
-    const lirAddBtn = d.querySelector(`[data-lir-add="${type}"]`);
-    const lirViewBtn = d.querySelector(`[data-lir-view="${type}"]`);
-    const calcToggleBtn = d.querySelector(`[data-calc-toggle="${type}"]`);
-    if(lirAddBtn) lirAddBtn.addEventListener("click", ()=> openLirPicker(type));
-    if(lirViewBtn) lirViewBtn.addEventListener("click", ()=> viewLirPhoto(type));
-    if(calcToggleBtn) calcToggleBtn.addEventListener("click", ()=> openCalc());
-
-    const extrasBox = d.querySelector(`#${type}-EXTRAS`);
-    const extras = memoData ? (memoData[type+"-EXTRAS"] || []) : [];
-    extras.forEach(ex => extrasBox.appendChild(makeExtraRow(type, ex.key, ex.val)));
-
-    d.querySelectorAll('.cmptArea').forEach(el=>{
-      autoGrowTextarea(el);
-      el.addEventListener('input', ()=> autoGrowTextarea(el));
-    });
-
-    const noteEl = d.querySelector(`textarea[data-k="${type}-note"]`);
-    if(noteEl){
-      noteEl.addEventListener('paste', ()=> setTimeout(()=> applyParsedNoteToSection(d, type, noteEl.value), 0));
-      noteEl.addEventListener('input', ()=> {
-        if(/CPT\s*[1-4]\s*[-:–]/i.test(noteEl.value)) applyParsedNoteToSection(d, type, noteEl.value);
-      });
-    }
-
-    return d;
-  };
-
-  saveMemo = function(){
-    if(!pickInbound.checked && !pickOutbound.checked){
-      alert("INBOUND OR OUTBOUND SELECT");
-      return;
-    }
-
-    const data = { id: editId ?? Date.now(), hasIn:pickInbound.checked, hasOut:pickOutbound.checked };
-    data.memoDate = memoDate.value || getViewingDayKey();
-    data.dayKey = data.memoDate;
-
-    data.sharedHL = pad(document.querySelector('input[data-k="SHARED-HL"]')?.value || "", 4);
-    data.sharedHASH = pad(document.querySelector('input[data-k="SHARED-HASH"]')?.value || "", 3);
-
-    ["INBOUND","OUTBOUND"].forEach(type=>{
-      const root = sections.querySelector(`.section[data-type="${type}"]`);
-
-      if(!root){
-        data[type+"-7C"] = "";
-        data[type+"-STA"] = "";
-        data[type+"-STD"] = "";
-        data[type+"-t"] = "";
-        data[type+"-d"] = "";
-        data[type+"-bb"] = "";
-        data[type+"-tt"] = "";
-        data[type+"-tb"] = "";
-        data[type+"-cmpt1"] = "F";
-        data[type+"-cmpt2"] = "F";
-        data[type+"-cmpt3"] = "";
-        data[type+"-cmpt4"] = "";
-        data[type+"-note"] = "";
-        data[type+"-TIME"] = "";
-        data[type+"-EXTRAS"] = [];
-        data[type+"-LIRPHOTO"] = currentLirPhotos[type] || "";
-        return;
-      }
-
-      const gi = (k)=> root.querySelector(`input[data-k="${type}-${k}"]`);
-      const cm = (n)=> root.querySelector(`[data-k="${type}-cmpt${n}"]`);
-      const note = root.querySelector(`textarea[data-k="${type}-note"]`);
-
-      data[type+"-7C"] = pad(gi("7C")?.value || "", 4);
-      data[type+"-STA"] = type==="INBOUND" ? pad(gi("STA")?.value, 4) : "";
-      data[type+"-STD"] = type==="OUTBOUND" ? pad(gi("STD")?.value, 4) : "";
-      data[type+"-t"] = pad(gi("t")?.value, 3);
-      data[type+"-d"] = pad(gi("d")?.value, 2);
-      data[type+"-bb"] = pad(gi("bb")?.value, 2);
-      data[type+"-tt"] = type==="OUTBOUND" ? pad(gi("tt")?.value, 4) : "";
-      data[type+"-tb"] = type==="OUTBOUND" ? pad(gi("tb")?.value, 4) : "";
-
-      data[type+"-cmpt1"] = cleanTextUpper(cm(1)?.value || "") || "F";
-      data[type+"-cmpt2"] = cleanTextUpper(cm(2)?.value || "") || "F";
-      data[type+"-cmpt3"] = cleanTextUpper(cm(3)?.value || "");
-      data[type+"-cmpt4"] = cleanTextUpper(cm(4)?.value || "");
-      data[type+"-note"] = note ? (note.value || "") : "";
-
-      const shown = document.getElementById(type+"-TIMESHOWN");
-      data[type+"-TIME"] = shown ? normalizeTimeText(shown.textContent || "") : "";
-
-      const extras = [];
-      const box = root.querySelector(`#${type}-EXTRAS`);
-      if(box){
-        [...box.querySelectorAll(".extraRow")].forEach(r=>{
-          const key = (r.querySelector("select")?.value || "").toUpperCase();
-          const val = pad(r.querySelector("input")?.value || "", 3);
-          if(key && val) extras.push({key, val});
-        });
-      }
-      data[type+"-EXTRAS"] = extras;
-      data[type+"-LIRPHOTO"] = currentLirPhotos[type] || "";
-    });
-
-    if(editId){
-      const idx = memos.findIndex(m=>m.id===editId);
-      if(idx >= 0) memos[idx] = data;
     }else{
-      memos.push(data);
+      for(const [pattern, key] of simpleMap){
+        const esc = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace("/", "\\/");
+        const re = new RegExp(`\\b${esc}\\b(?:\\s+(\\d+))?`, "g");
+        while((m = re.exec(joined)) !== null){
+          add(key, m[1] || "1");
+        }
+      }
     }
 
-    localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-    dayOffset = calcDayOffsetFromDate(data.memoDate);
-    updateDayLabel();
-    closeModal();
-    renderList(data.id);
+    return extras;
+  }
+
+  function applyExtraRows(type, extras){
+    const root = sections.querySelector(`.section[data-type="${type}"]`);
+    if(!root) return;
+    const box = root.querySelector(`#${type}-EXTRAS`);
+    if(!box) return;
+    box.innerHTML = "";
+    (extras || []).forEach(ex=>{
+      box.appendChild(makeExtraRow(type, ex.key, ex.val));
+    });
+  }
+
+  function ensureCmptAreas(){
+    ["INBOUND","OUTBOUND"].forEach(type=>{
+      [1,2,3,4].forEach(n=>{
+        const oldEl = sections.querySelector(`[data-k="${type}-cmpt${n}"]`);
+        if(!oldEl || oldEl.tagName === "TEXTAREA") return;
+        const ta = document.createElement("textarea");
+        ta.className = (oldEl.className || "") + " cmptArea";
+        ta.dataset.k = oldEl.dataset.k;
+        ta.placeholder = oldEl.placeholder || "TEXT";
+        ta.value = oldEl.value || "";
+        ta.rows = 1;
+        oldEl.replaceWith(ta);
+        ta.addEventListener("input", ()=> autoResizeTextarea(ta));
+        autoResizeTextarea(ta);
+      });
+    });
+  }
+
+  function attachNoteParser(type){
+    const root = sections.querySelector(`.section[data-type="${type}"]`);
+    if(!root) return;
+    const note = root.querySelector(`textarea[data-k="${type}-note"]`);
+    if(!note || note.dataset.noteParserAttached === "1") return;
+    note.dataset.noteParserAttached = "1";
+
+    const run = ()=>{
+      const raw = note.value || "";
+      if(!raw.trim()) return;
+      const { cpts, siLines } = parseCptBlocks(raw);
+
+      [1,2,3,4].forEach(n=>{
+        const el = root.querySelector(`[data-k="${type}-cmpt${n}"]`);
+        if(el && cpts[n]){
+          el.value = cpts[n];
+          if(el.tagName === "TEXTAREA") autoResizeTextarea(el);
+        }
+      });
+
+      const tEl = root.querySelector(`input[data-k="${type}-t"]`);
+      const dEl = root.querySelector(`input[data-k="${type}-d"]`);
+      const bbEl = root.querySelector(`input[data-k="${type}-bb"]`);
+
+      const countLines = siLines.length ? Object.values(cpts).concat(siLines) : Object.values(cpts);
+      const tVal = extractBagTotal(countLines);
+      const dVal = extractDsTotal(countLines);
+      const bbVal = extractBbstValue(countLines);
+
+      if(tEl && tVal) tEl.value = onlyNum(tVal, 3);
+      if(dEl && dVal) dEl.value = onlyNum(dVal, 2);
+      if(bbEl && bbVal) bbEl.value = onlyNum(bbVal, 2);
+
+      let extras = [];
+      if(siLines.length){
+        extras = collectExtraMatches(siLines, true);
+      }else{
+        extras = collectExtraMatches(Object.values(cpts), false);
+      }
+      applyExtraRows(type, extras);
+    };
+
+    note.addEventListener("paste", ()=> setTimeout(run, 0));
+    note.addEventListener("blur", run);
+  }
+
+  function enhanceMemoSections(){
+    ensureCmptAreas();
+    ["INBOUND","OUTBOUND"].forEach(type=>{
+      attachNoteParser(type);
+      [1,2,3,4].forEach(n=>{
+        const el = sections.querySelector(`[data-k="${type}-cmpt${n}"]`);
+        if(el && el.tagName === "TEXTAREA") autoResizeTextarea(el);
+      });
+    });
+  }
+
+  const _buildSectionsBlank = buildSectionsBlank;
+  buildSectionsBlank = function(){
+    _buildSectionsBlank();
+    enhanceMemoSections();
   };
+
+  const _rebuildSectionsFromMemo = rebuildSectionsFromMemo;
+  rebuildSectionsFromMemo = function(memoData){
+    _rebuildSectionsFromMemo(memoData);
+    enhanceMemoSections();
+  };
+
+  const _newMemo = newMemo;
+  newMemo = function(){
+    _newMemo();
+    enhanceMemoSections();
+  };
+
+  const _editMemo = editMemo;
+  editMemo = function(id){
+    _editMemo(id);
+    enhanceMemoSections();
+  };
+
+  enhanceMemoSections();
 
 </script>
 
