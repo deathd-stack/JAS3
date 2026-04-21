@@ -1263,8 +1263,26 @@
   </div>
 </div>
 
-<script>
-  const MEMO_KEY = "jas_memos_v64";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDto0AprR6IbnTNqNzZ3qt_-piJ_Cbqd_Y",
+    authDomain: "jasmemo-3c59b.firebaseapp.com",
+    projectId: "jasmemo-3c59b",
+    storageBucket: "jasmemo-3c59b.firebasestorage.app",
+    messagingSenderId: "891861551666",
+    appId: "1:891861551666:web:0b96ffcead52c73676ca2b",
+    measurementId: "G-0G4R112WVT"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  enableIndexedDbPersistence(db).catch((err)=>{
+    console.warn("PERSISTENCE OFF", err?.code || err);
+  });
+
   const PHOTO_KEY = "jas_photo_v64";
   const EQUIP_KEY = "jas_equipment_v64";
 
@@ -1293,7 +1311,7 @@
   const calcWrap = document.getElementById("calcWrap");
   const globalCalcDisplay = document.getElementById("globalCalcDisplay");
 
-  let memos = JSON.parse(localStorage.getItem(MEMO_KEY) || "[]");
+  let memos = [];
   let photo = localStorage.getItem(PHOTO_KEY) || "";
   let editId = null;
   let dayOffset = 0;
@@ -1301,6 +1319,8 @@
   let currentLirPhotos = { INBOUND:"", OUTBOUND:"" };
   let globalCalcExpr = "";
   let activeCalcInput = null;
+  let memosUnsubscribe = null;
+  const memoCache = new Map();
 
   const EXTRA_KEYS = ["W","C","COB","GB","TS","EMS","RUSH","CARSEAT","COMAT","STRAP","LONGFIN","CYCLE","CREW","PAX","PAD","DHC"];
 
@@ -1317,6 +1337,13 @@
   function fillTeamOptions(selected = "ALL"){
     if(!quickTeamSelect) return;
     quickTeamSelect.innerHTML = TEAM_VALUES.map(v => `<option value="${v}" ${String(v)===String(selected) ? "selected" : ""}>${v}</option>`).join("");
+  }
+
+  if(quickTeamSelect){
+    quickTeamSelect.addEventListener("change", ()=>{
+      activeTeamFilter = getActiveTeamValue();
+      listenMemos(activeTeamFilter, getViewingDayKey());
+    });
   }
 
   function parseFStoredValue(raw){
@@ -1413,27 +1440,80 @@
     return Math.round((target - base) / 86400000);
   }
 
-  function moveDay(n){
-    dayOffset += n;
-    fillTeamOptions("ALL");
-  if(quickTeamSelect){
-    quickTeamSelect.addEventListener("change", ()=>{
-      activeTeamFilter = quickTeamSelect.value || "ALL";
+  function getActiveTeamValue(){
+    return (quickTeamSelect?.value || "ALL").toUpperCase();
+  }
+
+  function getCacheKey(teamValue, dayKey){
+    return `${teamValue}__${dayKey}`;
+  }
+
+  function getTeamQuery(teamValue, dayKey){
+    return query(
+      collection(db, "memos"),
+      where("team", "==", teamValue),
+      where("dayKey", "==", dayKey)
+    );
+  }
+
+  function listenMemos(teamValue = "ALL", dayKey = getViewingDayKey()){
+    if(memosUnsubscribe){
+      memosUnsubscribe();
+      memosUnsubscribe = null;
+    }
+
+    const cacheKey = getCacheKey(teamValue, dayKey);
+    if(memoCache.has(cacheKey)){
+      memos = [...memoCache.get(cacheKey)];
       renderList();
+    }else{
+      memos = [];
+      renderList();
+    }
+
+    if(teamValue === "ALL") return;
+
+    const q = getTeamQuery(teamValue, dayKey);
+
+    memosUnsubscribe = onSnapshot(q, (snapshot)=>{
+      const nextMemos = snapshot.docs.map(docSnap => {
+        const data = docSnap.data() || {};
+        return {
+          ...data,
+          id: Number(data.id || 0),
+          team: String(data.team || "").toUpperCase()
+        };
+      });
+      memoCache.set(cacheKey, nextMemos);
+      memos = nextMemos;
+      renderList();
+    }, (error)=>{
+      console.error(error);
+      alert("FIREBASE LOAD ERROR");
     });
   }
 
-  updateDayLabel();
-    renderList();
+  async function saveMemoRemote(data){
+    await setDoc(doc(db, "memos", String(data.id)), data);
+  }
+
+  async function deleteMemosRemote(ids){
+    await Promise.all(ids.map(id => deleteDoc(doc(db, "memos", String(id)))));
+  }
+
+  function moveDay(n){
+    dayOffset += n;
+    updateDayLabel();
+    listenMemos(activeTeamFilter, getViewingDayKey());
   }
 
   function goToday(){
     dayOffset = 0;
     updateDayLabel();
-    renderList();
+    listenMemos(activeTeamFilter, getViewingDayKey());
   }
 
-  function deleteCurrentDay(){
+  async function deleteCurrentDay(){
     const dk = getViewingDayKey();
     const target = memos.filter(m => (m.dayKey || m.memoDate) === dk);
     if(!target.length){
@@ -1441,9 +1521,12 @@
       return;
     }
     if(!confirm("DELETE ALL MEMOS IN THIS DAY?")) return;
-    memos = memos.filter(m => (m.dayKey || m.memoDate) !== dk);
-    localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-    renderList();
+    try{
+      await deleteMemosRemote(target.map(m => m.id));
+    }catch(error){
+      console.error(error);
+      alert("DELETE FAIL");
+    }
   }
 
   function isCalcEligibleInput(el){
@@ -2054,14 +2137,20 @@
     }
   });
 
-  function saveMemo(){
+  async function saveMemo(){
     if(!pickInbound.checked && !pickOutbound.checked){
       alert("INBOUND OR OUTBOUND SELECT");
       return;
     }
 
+    const selectedTeam = getActiveTeamValue();
+    if(selectedTeam === "ALL"){
+      alert("TEAM SELECT");
+      return;
+    }
+
     const data = { id: editId ?? Date.now(), hasIn:pickInbound.checked, hasOut:pickOutbound.checked };
-    data.team = (quickTeamSelect && quickTeamSelect.value && quickTeamSelect.value !== "ALL") ? quickTeamSelect.value : "";
+    data.team = selectedTeam;
     data.memoDate = memoDate.value || getViewingDayKey();
     data.dayKey = data.memoDate;
 
@@ -2125,18 +2214,15 @@
       data[type+"-LIRPHOTO"] = currentLirPhotos[type] || "";
     });
 
-    if(editId){
-      const idx = memos.findIndex(m=>m.id===editId);
-      if(idx >= 0) memos[idx] = data;
-    }else{
-      memos.push(data);
+    try{
+      await saveMemoRemote(data);
+      dayOffset = calcDayOffsetFromDate(data.memoDate);
+      updateDayLabel();
+      closeModal();
+    }catch(error){
+      console.error(error);
+      alert("SAVE FAIL");
     }
-
-    localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-    dayOffset = calcDayOffsetFromDate(data.memoDate);
-    updateDayLabel();
-    closeModal();
-    renderList(data.id);
   }
 
   function formatCombinedLine(m){
@@ -2165,7 +2251,7 @@
     const viewingDay = getViewingDayKey();
     const dayMemos = memos
       .filter(m => (m.dayKey || m.memoDate || todayStr()) === viewingDay)
-      .filter(m => activeTeamFilter === "ALL" ? true : (m.team || "") === activeTeamFilter)
+      .filter(m => activeTeamFilter === "ALL" ? true : String(m.team || "").toUpperCase() === activeTeamFilter)
       .sort((a,b)=> Number(a.id) - Number(b.id));
 
     if(!dayMemos.length){
@@ -2237,16 +2323,19 @@
     openModal();
   }
 
-  function deleteSelected(){
+  async function deleteSelected(){
     const checks = document.querySelectorAll('.selBox:checked');
     const ids = [...checks].map(c=>Number(c.dataset.id));
     if(!ids.length){
       alert("SELECT MEMO");
       return;
     }
-    memos = memos.filter(m=>!ids.includes(m.id));
-    localStorage.setItem(MEMO_KEY, JSON.stringify(memos));
-    renderList();
+    try{
+      await deleteMemosRemote(ids);
+    }catch(error){
+      console.error(error);
+      alert("DELETE FAIL");
+    }
   }
 
   function addPhoto(){
@@ -2491,12 +2580,33 @@
   window.addEventListener("mousemove", (e)=> onMove(e.clientY));
   window.addEventListener("mouseup", ()=> onEnd());
 
+  fillTeamOptions("ALL");
   memoDate.value = getViewingDayKey();
   updateDayLabel();
-  renderList();
+  activeTeamFilter = getActiveTeamValue();
+  listenMemos(activeTeamFilter, getViewingDayKey());
   updateEquipBadge();
   syncPhotoFromStorage(false);
   updateGlobalCalcDisplay("0");
+
+  Object.assign(window, {
+    addExtraRow,
+    addPhoto,
+    closeCalc,
+    closeEquip,
+    closeModal,
+    closePhoto,
+    deleteCurrentDay,
+    deleteSelected,
+    goToday,
+    moveDay,
+    newMemo,
+    openEquip,
+    openPhoto,
+    saveEquip,
+    saveMemo
+  });
+
 </script>
 
 </body>
