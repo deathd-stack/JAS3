@@ -1632,6 +1632,240 @@
     }
   }
 
+
+
+  /* ===== JAS SCHEDULE EMBED ===== */
+  .scheduleIconBtn{
+    width:calc(42px * var(--ui));
+    height:calc(42px * var(--ui));
+    border-radius:999px;
+    padding:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:calc(20px * var(--ui));
+    line-height:1;
+    color:#111;
+    background:linear-gradient(180deg,#ffe063,#ffc61a);
+    box-shadow:0 10px 22px rgba(0,0,0,.22);
+    vertical-align:middle;
+  }
+
+  #scheduleScreen{
+    position:fixed;
+    inset:0;
+    z-index:44;
+    display:none;
+    overflow:auto;
+    padding:calc(16px * var(--ui)) calc(12px * var(--ui)) calc(120px * var(--ui));
+    background:
+      radial-gradient(1000px 420px at 50% 8%, rgba(255,122,0,.22), transparent 60%),
+      linear-gradient(180deg,#f3e6de 0%,#ebddd4 20%,#df7a2d 74%,#a84710 100%);
+    -webkit-overflow-scrolling:touch;
+  }
+  #scheduleScreen.show{display:block;}
+  .schTop{max-width:900px;margin:0 auto calc(10px * var(--ui));display:flex;align-items:center;justify-content:space-between;gap:calc(10px * var(--ui));}
+  .schTitle{font-size:calc(30px * var(--ui));font-weight:1000;color:#fff;text-shadow:0 10px 22px rgba(0,0,0,.18);letter-spacing:-.8px;}
+  .schCloseBtn,.schMiniBtn{box-shadow:var(--shadow-soft);padding:calc(11px * var(--ui)) calc(15px * var(--ui));font-size:calc(14px * var(--ui));}
+  .schControls{max-width:900px;margin:0 auto calc(8px * var(--ui));display:flex;gap:calc(8px * var(--ui));}
+  .schPill{flex:1;min-width:0;display:flex;align-items:center;gap:calc(8px * var(--ui));border:1px solid rgba(255,255,255,.06);border-radius:999px;padding:calc(8px * var(--ui)) calc(12px * var(--ui));background:linear-gradient(180deg,rgba(40,40,44,.96),rgba(27,27,30,.96));box-shadow:var(--shadow-soft);}
+  .schPill label{font-size:calc(13px * var(--ui));font-weight:1000;color:#fff;white-space:nowrap;}
+  .schPill select{width:100%;height:calc(38px * var(--ui));font-size:calc(14px * var(--ui));}
+  .schMonthBar{max-width:900px;margin:0 auto calc(10px * var(--ui));display:flex;align-items:center;justify-content:center;gap:calc(8px * var(--ui));}
+  .schMonthLabel{background:rgba(34,34,38,.96);border-radius:999px;padding:calc(10px * var(--ui)) calc(18px * var(--ui));font-size:calc(16px * var(--ui));font-weight:1000;color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.20);}
+  .schBadge{max-width:900px;margin:0 auto calc(10px * var(--ui));background:rgba(18,18,20,.88);border:1px solid rgba(255,255,255,.06);border-radius:calc(24px * var(--ui));padding:calc(12px * var(--ui));box-shadow:var(--shadow-soft);text-align:center;}
+  .schBadge .b1{font-size:calc(18px * var(--ui));font-weight:1000;color:#fff;}.schBadge .b2{font-size:calc(12px * var(--ui));font-weight:900;color:#fff2d8;margin-top:3px;}
+  .schCalendarWrap{max-width:900px;margin:0 auto;background:rgba(18,18,20,.72);border-radius:calc(28px * var(--ui));padding:calc(10px * var(--ui));box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06);}
+  .schWeekHead,.schCalendar{display:grid;grid-template-columns:repeat(7,1fr);gap:calc(6px * var(--ui));}
+  .schWeekHead div{text-align:center;font-size:calc(11px * var(--ui));color:#fff;font-weight:1000;opacity:.8;padding:calc(4px * var(--ui)) 0;}.schSun{color:#ff9a9a!important}.schSat{color:#9ab7ff!important}
+  .schDay{min-height:calc(76px * var(--ui));border-radius:calc(18px * var(--ui));background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.05);padding:calc(8px * var(--ui));cursor:pointer;overflow:hidden;}
+  .schDay.blank{opacity:.18;cursor:default}.schDay.today{outline:2px solid rgba(255,198,26,.8)}
+  .schDayNum{font-size:calc(13px * var(--ui));font-weight:1000;color:#fff;}.schCode{margin-top:calc(6px * var(--ui));display:inline-flex;max-width:100%;border-radius:999px;background:linear-gradient(180deg,#ff9a2f,#ff6a00);padding:calc(5px * var(--ui)) calc(8px * var(--ui));font-size:calc(12px * var(--ui));font-weight:1000;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.schMemo{margin-top:4px;color:#fff2d8;font-size:calc(10px * var(--ui));font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.schSmall{margin-top:4px;color:#d8d8de;font-size:calc(10px * var(--ui));font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .schBottomActions{position:fixed;left:50%;bottom:calc(16px * var(--ui));transform:translateX(-50%);z-index:46;display:flex;gap:calc(10px * var(--ui));width:min(900px,calc(100% - 24px));justify-content:center;pointer-events:none;}.schBottomActions button{pointer-events:auto;min-width:calc(126px * var(--ui));}
+  .schPrimary{background:linear-gradient(180deg,#ff9a2f,#ff6a00)!important;color:#fff!important;}.schDark{background:linear-gradient(180deg,#2d2d33,#1c1c20)!important;color:var(--orange1)!important;}
+  .schModal{position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.58);display:none;align-items:flex-end;justify-content:center;}.schModal.show{display:flex}.schBox{width:100%;max-width:760px;max-height:90vh;overflow:auto;background:#17171a;border-radius:calc(34px * var(--ui)) calc(34px * var(--ui)) 0 0;padding:0 calc(14px * var(--ui)) calc(18px * var(--ui));box-shadow:0 -10px 30px rgba(0,0,0,.28);}.schDrag{position:sticky;top:0;background:#17171a;z-index:2;padding:calc(7px * var(--ui)) 0 calc(8px * var(--ui));}.schHandle{width:calc(62px * var(--ui));height:calc(8px * var(--ui));background:#494952;border-radius:999px;margin:0 auto calc(8px * var(--ui));}.schActionBar{display:flex;justify-content:space-between;gap:calc(10px * var(--ui));}.schSection{background:#1f1f23;border-radius:calc(24px * var(--ui));padding:calc(13px * var(--ui));margin:calc(10px * var(--ui)) 0;border:1px solid rgba(255,255,255,.05);}.schSectionTitle{font-size:calc(18px * var(--ui));font-weight:1000;color:#fff;margin-bottom:calc(8px * var(--ui));}.schCodeGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(8px * var(--ui));}.schCodeBtn{padding:calc(10px * var(--ui)) calc(8px * var(--ui));font-size:calc(13px * var(--ui));box-shadow:none;background:#242429;color:#fff;}.schCodeBtn.active{background:linear-gradient(180deg,#ff9a2f,#ff6a00);color:#fff;}.schEditGrid{display:grid;grid-template-columns:calc(52px * var(--ui)) 1fr;gap:calc(8px * var(--ui));align-items:center;}.schEditGrid label{font-size:calc(13px * var(--ui));font-weight:1000;color:#fff;}.schEditGrid input,.schEditGrid select{height:calc(44px * var(--ui));font-size:calc(14px * var(--ui));}.schBulkRow{display:grid;grid-template-columns:1fr auto;gap:calc(8px * var(--ui));margin-bottom:calc(8px * var(--ui));}.schMemberEdit{display:grid;grid-template-columns:.8fr .9fr .8fr;gap:calc(6px * var(--ui));align-items:center;margin-top:calc(7px * var(--ui));}.schMemberEdit .name{font-size:calc(13px * var(--ui));font-weight:1000;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.schMemberEdit input,.schMemberEdit select{height:calc(42px * var(--ui));font-size:calc(13px * var(--ui));}.schMemberRow{display:grid;grid-template-columns:1fr auto;gap:calc(8px * var(--ui));align-items:center;margin-top:calc(8px * var(--ui));}.schMemberRow input{height:calc(44px * var(--ui));text-align:left;}.schOtLine{display:flex;flex-wrap:wrap;gap:calc(6px * var(--ui));}.schOtPill{display:inline-flex;gap:4px;align-items:center;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.05);padding:calc(7px * var(--ui)) calc(9px * var(--ui));font-size:calc(12px * var(--ui));font-weight:1000;color:#fff;}.schOtPill b{color:var(--orange1)}
+
+
+  /* ===== POLISHED UI REFINEMENT V2 - layout safe ===== */
+  :root{
+    --jas-glass:rgba(18,18,22,.78);
+    --jas-glass-strong:rgba(18,18,22,.92);
+    --jas-border:rgba(255,255,255,.09);
+    --jas-orange-glow:rgba(255,106,0,.32);
+  }
+
+  .titleWrap{
+    gap:calc(8px * var(--ui));
+  }
+
+  .titleMain{
+    letter-spacing:-1.6px;
+    text-shadow:0 10px 28px rgba(0,0,0,.18), 0 0 20px rgba(255,106,0,.18);
+  }
+
+  .scheduleIconBtn{
+    width:calc(38px * var(--ui));
+    height:calc(38px * var(--ui));
+    font-size:calc(18px * var(--ui));
+    background:linear-gradient(180deg,#fff2b2,#ffc928 54%,#ff9a1f);
+    border:1px solid rgba(255,255,255,.38);
+    box-shadow:0 12px 26px rgba(0,0,0,.24), 0 0 20px rgba(255,198,26,.18);
+  }
+
+  .controlsRow > *,
+  .teamControlWrap,
+  .mainControlWrap,
+  .authorControlWrap,
+  .dayLabel,
+  .memoCard,
+  .emptyDay{
+    border-color:var(--jas-border)!important;
+  }
+
+  .memoCard,
+  .emptyDay{
+    background:linear-gradient(180deg,rgba(33,33,39,.94),rgba(18,18,23,.94));
+  }
+
+  button,
+  .dayBtn,
+  .topMiniBtn,
+  .lirBtn,
+  .iconBtn,
+  .minusBtn{
+    border:1px solid rgba(255,255,255,.08);
+  }
+
+  #scheduleScreen{
+    background:
+      radial-gradient(900px 360px at 50% 5%, rgba(255,198,78,.30), transparent 58%),
+      radial-gradient(720px 460px at 15% 82%, rgba(255,106,0,.24), transparent 62%),
+      linear-gradient(180deg,#f4e8df 0%,#eadbd2 24%,#dd762c 73%,#8d370d 100%)!important;
+  }
+
+  .schTop,
+  .schControls,
+  .schMonthBar,
+  .schBadge,
+  .schCalendarWrap{
+    max-width:920px;
+  }
+
+  .schTitle{
+    font-size:calc(32px * var(--ui));
+    letter-spacing:-1.1px;
+    text-shadow:0 12px 28px rgba(0,0,0,.22), 0 0 18px rgba(255,106,0,.16);
+  }
+
+  .schPill,
+  .schBadge,
+  .schCalendarWrap,
+  .schBox,
+  .schSection{
+    border-color:var(--jas-border)!important;
+  }
+
+  .schPill{
+    background:linear-gradient(180deg,rgba(34,34,40,.92),rgba(17,17,22,.92));
+    box-shadow:0 14px 28px rgba(0,0,0,.22);
+  }
+
+  .schMonthLabel,
+  .schBadge,
+  .schCalendarWrap{
+    background:var(--jas-glass);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+  }
+
+  .schBadge{
+    border-radius:calc(26px * var(--ui));
+    box-shadow:0 18px 36px rgba(0,0,0,.24);
+  }
+
+  .schCalendarWrap{
+    padding:calc(12px * var(--ui));
+    box-shadow:0 22px 48px rgba(0,0,0,.30);
+  }
+
+  .schDay{
+    background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035));
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    transition:transform .13s ease, background .13s ease, box-shadow .13s ease;
+  }
+
+  .schDay:active{
+    transform:scale(.985);
+    background:rgba(255,255,255,.10);
+  }
+
+  .schDay.today{
+    outline:2px solid rgba(255,198,26,.88);
+    box-shadow:0 0 0 4px rgba(255,198,26,.10), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+
+  .schCode{
+    box-shadow:0 8px 16px rgba(255,106,0,.18);
+  }
+
+  .schBottomActions{
+    padding:calc(8px * var(--ui));
+    border-radius:999px;
+    background:rgba(20,20,24,.18);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+
+  .schModal{
+    background:rgba(0,0,0,.64);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+  }
+
+  .schBox{
+    background:linear-gradient(180deg,rgba(25,25,30,.98),rgba(14,14,18,.98));
+    box-shadow:0 -18px 44px rgba(0,0,0,.34);
+  }
+
+  .schDrag{
+    background:linear-gradient(180deg,rgba(25,25,30,1),rgba(25,25,30,.96));
+  }
+
+  .schSection{
+    background:linear-gradient(180deg,rgba(34,34,40,.86),rgba(25,25,30,.86));
+  }
+
+  .schCodeGrid{
+    grid-template-columns:repeat(4, minmax(0,1fr));
+  }
+
+  .schCodeBtn{
+    border-radius:calc(18px * var(--ui));
+    background:linear-gradient(180deg,rgba(49,49,56,.94),rgba(34,34,40,.94));
+    border:1px solid rgba(255,255,255,.07);
+  }
+
+  .schCodeBtn.active,
+  .schPrimary{
+    box-shadow:0 12px 24px rgba(255,106,0,.20)!important;
+  }
+
+  .schMemberEdit{
+    grid-template-columns:.72fr .86fr .92fr;
+  }
+
+  .schOtPill{
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.045));
+  }
+
+  @media (max-width:520px){
+    .schCodeGrid{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .schMemberEdit{grid-template-columns:.68fr .82fr .95fr;gap:5px;}
+    .schBottomActions button{min-width:112px;font-size:13px;}
+    .schTitle{font-size:25px;}
+  }
+
 </style>
 </head>
 
@@ -1640,9 +1874,53 @@
 <header id="homeHeader" onclick="openPhoto()" ondblclick="openPhoto()">
   <div class="titleWrap">
     <div class="titleMain">JAS MEMO</div>
+    <button type="button" class="scheduleIconBtn" onclick="event.stopPropagation(); openSchedule();" title="SCHEDULE">📅</button>
     <div class="titleVer">VER.X</div>
   </div>
 </header>
+
+<div id="scheduleScreen" aria-hidden="true">
+  <div class="schTop">
+    <div class="schTitle">JAS SCHEDULE</div>
+    <button type="button" class="schCloseBtn schDark" onclick="closeSchedule()">MEMO</button>
+  </div>
+  <div class="schControls">
+    <div class="schPill"><label>TEAM</label><select id="schTeamSelect"></select></div>
+    <div class="schPill"><label>MAIN</label><select id="schMainSelect"></select></div>
+  </div>
+  <div class="schMonthBar">
+    <button type="button" class="schMiniBtn schDark" id="schPrevMonthBtn">PREV</button>
+    <div class="schMonthLabel" id="schMonthLabel">2026.06</div>
+    <button type="button" class="schMiniBtn schDark" id="schNextMonthBtn">NEXT</button>
+  </div>
+  <div class="schBadge"><div class="b1" id="schBadgeTeam">MAIN TEAM</div><div class="b2">전체 공유 스케줄</div></div>
+  <div class="schCalendarWrap">
+    <div class="schWeekHead"><div class="schSun">SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div class="schSat">SAT</div></div>
+    <div class="schCalendar" id="schCalendar"></div>
+  </div>
+  <div class="schBottomActions">
+    <button type="button" class="schDark" id="schMemberBtn">조원 추가</button>
+    <button type="button" class="schPrimary" id="schOtViewBtn">연장시간보기</button>
+  </div>
+</div>
+
+<div class="schModal" id="schDayModal"><div class="schBox"><div class="schDrag"><div class="schHandle"></div><div class="schActionBar"><button type="button" class="schDark" id="schDayCloseBtn">CLOSE</button><button type="button" class="schPrimary" id="schDaySaveBtn">SAVE</button></div></div>
+  <div class="modalTitleTap" id="schDayTitle">DAY EDIT</div>
+  <div class="schSection"><div class="schSectionTitle">근무 코드 선택</div><div class="schCodeGrid" id="schCodeGrid"></div></div>
+  <div class="schSection"><div class="schSectionTitle">근무 입력</div><div class="schEditGrid"><label>CODE</label><input id="schShiftInput" placeholder="근무 코드"><label>MEMO</label><input id="schMemoInput" placeholder="간단 메모"></div></div>
+  <div class="schSection"><div class="schSectionTitle">조원별 근무 / 연장</div><div class="schBulkRow"><input id="schBulkOtInput" inputmode="numeric" maxlength="4" placeholder="전체 연장 예: 0200"><button type="button" class="schPrimary" id="schApplyBulkOtBtn">전체적용</button></div><div id="schMemberEditList"></div></div>
+</div></div>
+
+<div class="schModal" id="schMemberModal"><div class="schBox"><div class="schDrag"><div class="schHandle"></div><div class="schActionBar"><button type="button" class="schDark" id="schMemberCloseBtn">CLOSE</button><button type="button" class="schPrimary" id="schMemberSaveBtn">SAVE</button></div></div>
+  <div class="modalTitleTap">조원 추가</div>
+  <div class="schSection"><div class="schSectionTitle">최대 6명</div><div id="schMemberList"></div><button type="button" class="schPrimary" id="schAddMemberBtn">+ 조원 추가</button></div>
+</div></div>
+
+<div class="schModal" id="schOtModal"><div class="schBox"><div class="schDrag"><div class="schHandle"></div><div class="schActionBar"><button type="button" class="schDark" id="schOtCloseBtn">CLOSE</button></div></div>
+  <div class="modalTitleTap">연장시간보기</div>
+  <div class="schSection"><div class="schSectionTitle" id="schOtTitle">월 합계</div><div class="schOtLine" id="schOtList"></div></div>
+</div></div>
+
 
 <div class="controls" id="topControls">
   <div class="controlsRow">
@@ -3222,6 +3500,277 @@
   window.addEventListener("mousemove", (e)=> onMove(e.clientY));
   window.addEventListener("mouseup", ()=> onEnd());
 
+
+
+  /* ===== JAS SCHEDULE FIREBASE SHARED ===== */
+  const SCH_COLLECTION = "jasScheduleV1";
+  const SCH_MAIN_KEY = "jas_schedule_main_team_v1";
+  const SCH_TEAMS = [...Array.from({length:24},(_,i)=>`${i+1}조`), "토잉1", "토잉2", "토잉3", "통제"];
+  const SCH_WORK_CODES = ["A3","A4","A53","ALL53","P13","P133","P14","P15","A8","R43","R14","휴무"];
+  const SCH_MEMBER_CODES = ["","연차","A3","A4","A53","ALL53","P13","P133","P14","P15","A8","R43","R14"];
+  const SCH_HOLIDAY_WORK_CODES = ["R43","R14"];
+  const SCH_MAX_MEMBERS = 6;
+  let schData = {};
+  let schMembers = {};
+  let schViewDate = new Date();
+  schViewDate.setDate(1);
+  let schSelectedTeam = localStorage.getItem(SCH_MAIN_KEY) || "1조";
+  let schSelectedDateKey = "";
+  let schUnsubscribe = null;
+
+  function schEl(id){ return document.getElementById(id); }
+  function schPad(n){ return String(n).padStart(2,"0"); }
+  function schYmd(d){ return `${d.getFullYear()}-${schPad(d.getMonth()+1)}-${schPad(d.getDate())}`; }
+  function schEsc(v){ return String(v || "").replace(/[&<>"]/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[s])); }
+  function schGetKey(dateKey, team){ return `${dateKey}__${team}`; }
+  function schGetDay(dateKey, team){
+    const key = schGetKey(dateKey, team);
+    if(!schData[key]) schData[key] = {type:"day", dateKey, team, shift:"", memo:"", leaves:{}, ot:{}};
+    if(!schData[key].leaves) schData[key].leaves = {};
+    if(!schData[key].ot) schData[key].ot = {};
+    return schData[key];
+  }
+  function schGetMembers(team){ if(!schMembers[team]) schMembers[team] = []; return schMembers[team]; }
+  function schGetCodeValue(v){ return (v && typeof v === "object") ? (v.code || "") : (v || ""); }
+  function schIsWorkCode(code){ return SCH_WORK_CODES.includes(code) && code !== "휴무"; }
+  function schParseOt(v){
+    v = String(v || "").replace(/[^0-9]/g, "");
+    if(!v) return 0;
+    v = v.padStart(4,"0").slice(-4);
+    const h = Number(v.slice(0,2)) || 0;
+    const m = Math.min(59, Number(v.slice(2,4)) || 0);
+    return h * 60 + m;
+  }
+  function schFormatOt(min){
+    min = Number(min) || 0;
+    if(!min) return "0000";
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return `${String(h).padStart(2,"0")}${String(m).padStart(2,"0")}`;
+  }
+  function schGetOt(data, name){
+    if(data.ot && data.ot[name] !== undefined) return Number(data.ot[name]) || 0;
+    const v = data.leaves && data.leaves[name];
+    return (v && typeof v === "object") ? (Number(v.ot) || 0) : 0;
+  }
+  function schIsHolidayWork(code){ return SCH_HOLIDAY_WORK_CODES.includes(schGetCodeValue(code)); }
+
+  function schInitSelects(){
+    const teamSelect = schEl("schTeamSelect");
+    const mainSelect = schEl("schMainSelect");
+    if(!teamSelect || teamSelect.options.length) return;
+    SCH_TEAMS.forEach(t => {
+      const a = document.createElement("option"); a.value = t; a.textContent = t; teamSelect.appendChild(a);
+      const b = document.createElement("option"); b.value = t; b.textContent = t; mainSelect.appendChild(b);
+    });
+    teamSelect.value = schSelectedTeam;
+    mainSelect.value = schSelectedTeam;
+    teamSelect.addEventListener("change", () => { schSelectedTeam = teamSelect.value; schRenderCalendar(); });
+    mainSelect.addEventListener("change", () => {
+      schSelectedTeam = mainSelect.value;
+      localStorage.setItem(SCH_MAIN_KEY, schSelectedTeam);
+      teamSelect.value = schSelectedTeam;
+      schRenderCalendar();
+    });
+    schEl("schPrevMonthBtn").addEventListener("click",()=>{schViewDate.setMonth(schViewDate.getMonth()-1); schRenderCalendar();});
+    schEl("schNextMonthBtn").addEventListener("click",()=>{schViewDate.setMonth(schViewDate.getMonth()+1); schRenderCalendar();});
+    schEl("schDayCloseBtn").addEventListener("click",()=>schCloseModal("schDayModal"));
+    schEl("schDaySaveBtn").addEventListener("click",schSaveDay);
+    schEl("schMemberBtn").addEventListener("click",schOpenMembers);
+    schEl("schMemberCloseBtn").addEventListener("click",()=>schCloseModal("schMemberModal"));
+    schEl("schMemberSaveBtn").addEventListener("click",schSaveMembers);
+    schEl("schAddMemberBtn").addEventListener("click",()=>schAddMemberRow(""));
+    schEl("schOtViewBtn").addEventListener("click",schOpenOt);
+    schEl("schOtCloseBtn").addEventListener("click",()=>schCloseModal("schOtModal"));
+    schEl("schApplyBulkOtBtn").addEventListener("click",schApplyBulkOt);
+    ["schDayModal","schMemberModal","schOtModal"].forEach(id=>{
+      schEl(id).addEventListener("click", e=>{ if(e.target === schEl(id)) schCloseModal(id); });
+    });
+  }
+
+  function schListen(){
+    if(schUnsubscribe) return;
+    schUnsubscribe = onSnapshot(collection(db, SCH_COLLECTION), snap => {
+      const nextData = {};
+      const nextMembers = {};
+      snap.forEach(d => {
+        const x = d.data() || {};
+        if(x.type === "members") nextMembers[x.team] = Array.isArray(x.members) ? x.members.slice(0, SCH_MAX_MEMBERS) : [];
+        if(x.type === "day" && x.dateKey && x.team) nextData[schGetKey(x.dateKey, x.team)] = x;
+      });
+      schData = nextData;
+      schMembers = nextMembers;
+      if(schEl("scheduleScreen")?.classList.contains("show")) schRenderCalendar();
+    }, err => console.error("SCHEDULE LOAD ERROR", err));
+  }
+
+  function schRenderCalendar(){
+    schInitSelects();
+    const y = schViewDate.getFullYear();
+    const m = schViewDate.getMonth();
+    schEl("schMonthLabel").textContent = `${y}.${schPad(m+1)}`;
+    schEl("schBadgeTeam").textContent = schSelectedTeam;
+    schEl("schTeamSelect").value = schSelectedTeam;
+    schEl("schMainSelect").value = localStorage.getItem(SCH_MAIN_KEY) || schSelectedTeam;
+    const cal = schEl("schCalendar");
+    cal.innerHTML = "";
+    const first = new Date(y,m,1);
+    const last = new Date(y,m+1,0).getDate();
+    for(let i=0;i<first.getDay();i++) cal.insertAdjacentHTML("beforeend", `<div class="schDay blank"></div>`);
+    const todayKey = schYmd(new Date());
+    for(let d=1; d<=last; d++){
+      const date = new Date(y,m,d);
+      const key = schYmd(date);
+      const data = schData[schGetKey(key, schSelectedTeam)] || {};
+      const members = schGetMembers(schSelectedTeam);
+      const memberText = members.map(n => {
+        const code = schGetCodeValue(data.leaves && data.leaves[n]);
+        return code ? `${n}:${code}` : "";
+      }).filter(Boolean).join(" ");
+      cal.insertAdjacentHTML("beforeend", `
+        <div class="schDay ${key===todayKey?'today':''}" data-date="${key}">
+          <div class="schDayNum">${d}</div>
+          ${data.shift ? `<div class="schCode">${schEsc(data.shift)}</div>` : ""}
+          ${data.memo ? `<div class="schMemo">${schEsc(data.memo)}</div>` : ""}
+          ${memberText ? `<div class="schSmall">${schEsc(memberText)}</div>` : ""}
+        </div>`);
+    }
+    cal.querySelectorAll(".schDay[data-date]").forEach(el=>el.addEventListener("click",()=>schOpenDay(el.dataset.date)));
+  }
+
+  function schOpenDay(dateKey){
+    schSelectedDateKey = dateKey;
+    const data = schGetDay(dateKey, schSelectedTeam);
+    schEl("schDayTitle").textContent = `${dateKey} / ${schSelectedTeam}`;
+    schEl("schShiftInput").value = data.shift || "";
+    schEl("schMemoInput").value = data.memo || "";
+    schEl("schBulkOtInput").value = "";
+    const grid = schEl("schCodeGrid");
+    grid.innerHTML = "";
+    SCH_WORK_CODES.forEach(code=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "schCodeBtn" + (data.shift === code ? " active" : "");
+      btn.textContent = code;
+      btn.addEventListener("click",()=>{
+        schEl("schShiftInput").value = code;
+        grid.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+      });
+      grid.appendChild(btn);
+    });
+    schRenderMemberEditList(data);
+    schShowModal("schDayModal");
+  }
+
+  function schRenderMemberEditList(data){
+    const wrap = schEl("schMemberEditList");
+    const members = schGetMembers(schSelectedTeam);
+    wrap.innerHTML = members.length ? "" : `<div class="schSmall">조원 추가 버튼에서 이름을 먼저 넣어줘.</div>`;
+    members.forEach(name=>{
+      const saved = data.leaves && data.leaves[name];
+      const code = schGetCodeValue(saved);
+      const ot = schGetOt(data, name);
+      const row = document.createElement("div");
+      row.className = "schMemberEdit";
+      row.dataset.name = name;
+      row.innerHTML = `<div class="name">${schEsc(name)}</div><select class="schMemberCode"></select><input class="schMemberOt" inputmode="numeric" maxlength="4" placeholder="0200" value="${ot ? schFormatOt(ot) : ''}">`;
+      const sel = row.querySelector("select");
+      SCH_MEMBER_CODES.forEach(c=>{ const o=document.createElement("option"); o.value=c; o.textContent=c||"기본"; sel.appendChild(o); });
+      sel.value = code || "";
+      wrap.appendChild(row);
+    });
+  }
+
+  function schApplyBulkOt(){
+    const val = schEl("schBulkOtInput").value;
+    schEl("schMemberEditList").querySelectorAll(".schMemberOt").forEach(inp=>{ inp.value = val; });
+  }
+
+  async function schSaveDay(){
+    const data = schGetDay(schSelectedDateKey, schSelectedTeam);
+    data.shift = schEl("schShiftInput").value.trim().toUpperCase();
+    data.memo = schEl("schMemoInput").value.trim();
+    data.type = "day";
+    data.dateKey = schSelectedDateKey;
+    data.team = schSelectedTeam;
+    data.leaves = data.leaves || {};
+    data.ot = data.ot || {};
+    schEl("schMemberEditList").querySelectorAll(".schMemberEdit").forEach(row=>{
+      const name = row.dataset.name;
+      const code = row.querySelector(".schMemberCode").value;
+      const ot = schParseOt(row.querySelector(".schMemberOt").value);
+      if(code) data.leaves[name] = {code, ot};
+      else if(ot) data.leaves[name] = {code:"", ot};
+      else delete data.leaves[name];
+      if(ot) data.ot[name] = ot;
+      else delete data.ot[name];
+    });
+    await setDoc(doc(db, SCH_COLLECTION, `day_${schSelectedDateKey}_${schSelectedTeam}`), data);
+    schCloseModal("schDayModal");
+    schRenderCalendar();
+    document.getElementById("scheduleScreen")?.scrollTo({top:0, behavior:"smooth"});
+  }
+
+  function schOpenMembers(){
+    const list = schEl("schMemberList");
+    list.innerHTML = "";
+    schGetMembers(schSelectedTeam).forEach(name=>schAddMemberRow(name));
+    schShowModal("schMemberModal");
+  }
+  function schAddMemberRow(name=""){
+    const list = schEl("schMemberList");
+    if(list.children.length >= SCH_MAX_MEMBERS){ alert("조원은 최대 6명까지 가능해."); return; }
+    const row = document.createElement("div");
+    row.className = "schMemberRow";
+    row.innerHTML = `<input class="schMemberNameInput" maxlength="12" placeholder="조원 이름" value="${schEsc(name)}"><button type="button" class="schDark">삭제</button>`;
+    row.querySelector("button").addEventListener("click",()=>row.remove());
+    list.appendChild(row);
+  }
+  async function schSaveMembers(){
+    const names = [...schEl("schMemberList").querySelectorAll(".schMemberNameInput")].map(i=>i.value.trim()).filter(Boolean).slice(0,SCH_MAX_MEMBERS);
+    schMembers[schSelectedTeam] = names;
+    await setDoc(doc(db, SCH_COLLECTION, `members_${schSelectedTeam}`), {type:"members", team:schSelectedTeam, members:names});
+    schCloseModal("schMemberModal");
+    schRenderCalendar();
+  }
+
+  function schOpenOt(){
+    const members = schGetMembers(schSelectedTeam);
+    const totals = Object.fromEntries(members.map(n=>[n,0]));
+    const y = schViewDate.getFullYear();
+    const m = schViewDate.getMonth();
+    const last = new Date(y,m+1,0).getDate();
+    for(let d=1; d<=last; d++){
+      const key = schYmd(new Date(y,m,d));
+      const data = schData[schGetKey(key, schSelectedTeam)];
+      if(!data) continue;
+      members.forEach(name=>{
+        const code = schGetCodeValue(data.leaves && data.leaves[name]);
+        if(["연차"].includes(code)) return;
+        totals[name] += schGetOt(data, name);
+      });
+    }
+    schEl("schOtTitle").textContent = `${schSelectedTeam} / ${y}.${schPad(m+1)} 연장시간`;
+    schEl("schOtList").innerHTML = members.length ? members.map(n=>`<span class="schOtPill">${schEsc(n)} <b>${schFormatOt(totals[n]||0)}</b></span>`).join("") : `<div class="schSmall">조원을 먼저 추가해줘.</div>`;
+    schShowModal("schOtModal");
+  }
+
+  function schShowModal(id){ schEl(id).classList.add("show"); }
+  function schCloseModal(id){ schEl(id).classList.remove("show"); }
+  function openSchedule(){
+    schInitSelects();
+    schListen();
+    schRenderCalendar();
+    schEl("scheduleScreen").classList.add("show");
+    schEl("scheduleScreen").setAttribute("aria-hidden", "false");
+  }
+  function closeSchedule(){
+    schEl("scheduleScreen").classList.remove("show");
+    schEl("scheduleScreen").setAttribute("aria-hidden", "true");
+  }
+
+
   activeTeamFilter = mainTeam || "ALL";
   fillTeamOptions(activeTeamFilter);
   fillMainTeamOptions(mainTeam);
@@ -3250,6 +3799,8 @@
     newMemo,
     openEquip,
     openPhoto,
+    openSchedule,
+    closeSchedule,
     saveEquip,
     saveMemo
   });
