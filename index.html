@@ -1867,6 +1867,76 @@
   }
 
 
+  /* ===== SCHEDULE FINAL FIX: full screen calendar + holiday color ===== */
+  #scheduleScreen{
+    padding:calc(8px * var(--ui)) calc(8px * var(--ui)) calc(72px * var(--ui))!important;
+  }
+
+  .schTop{margin-bottom:calc(6px * var(--ui))!important;}
+  .schControls{margin-bottom:calc(6px * var(--ui))!important;}
+  .schMonthBar{margin-bottom:calc(6px * var(--ui))!important;}
+  .schBadge{display:none!important;}
+
+  .schCalendarWrap{
+    width:calc(100vw - 16px)!important;
+    max-width:980px!important;
+    height:calc(100dvh - 178px)!important;
+    min-height:430px;
+    padding:calc(8px * var(--ui))!important;
+    display:flex;
+    flex-direction:column;
+    margin-bottom:0!important;
+  }
+
+  .schWeekHead{
+    flex:0 0 auto;
+    gap:calc(4px * var(--ui))!important;
+  }
+
+  .schCalendar{
+    flex:1 1 auto;
+    min-height:0;
+    gap:calc(4px * var(--ui))!important;
+    grid-auto-rows:1fr;
+  }
+
+  .schDay{
+    min-height:0!important;
+    padding:calc(6px * var(--ui))!important;
+    border-radius:calc(15px * var(--ui))!important;
+  }
+
+  .schCode.off{
+    background:#fff!important;
+    color:#ff6a00!important;
+    border:1px solid rgba(255,106,0,.35)!important;
+    box-shadow:0 8px 16px rgba(255,255,255,.12)!important;
+  }
+
+  .schBottomActions{
+    bottom:calc(8px * var(--ui))!important;
+    padding:calc(5px * var(--ui))!important;
+  }
+
+  @media (max-width:520px){
+    #scheduleScreen{padding:8px 7px 62px!important;}
+    .schTitle{font-size:22px!important;}
+    .schCloseBtn,.schMiniBtn{padding:8px 11px!important;font-size:12px!important;}
+    .schPill{padding:6px 8px!important;}
+    .schPill select{height:32px!important;font-size:12px!important;}
+    .schMonthLabel{padding:8px 14px!important;font-size:14px!important;}
+    .schCalendarWrap{
+      width:calc(100vw - 14px)!important;
+      height:calc(100dvh - 154px)!important;
+      min-height:390px;
+      border-radius:20px!important;
+    }
+    .schDayNum{font-size:12px!important;}
+    .schCode{font-size:10px!important;padding:4px 6px!important;margin-top:4px!important;}
+    .schSmall,.schMemo{font-size:9px!important;margin-top:3px!important;}
+  }
+
+
   /* ===== FIX: title calendar button to far right ===== */
   #homeHeader{
     position:relative;
@@ -3547,7 +3617,7 @@
 
 
   /* ===== JAS SCHEDULE FIREBASE SHARED ===== */
-  const SCH_COLLECTION = "jasScheduleV1";
+  const SCH_COLLECTION = "memos"; // 스케줄도 기존 허용된 memos 컬렉션 안에 별도 문서로 저장
   const SCH_MAIN_KEY = "jas_schedule_main_team_v1";
   const SCH_TEAMS = [...Array.from({length:24},(_,i)=>`${i+1}조`), "토잉1", "토잉2", "토잉3", "통제"];
   const SCH_WORK_CODES = ["A3","A4","A53","ALL53","P13","P133","P14","P15","A8","R43","R14","휴무"];
@@ -3639,7 +3709,16 @@
       const nextMembers = {};
       snap.forEach(d => {
         const x = d.data() || {};
+        if(x.type === "schedule_members") nextMembers[x.schTeam || x.team] = Array.isArray(x.members) ? x.members.slice(0, SCH_MAX_MEMBERS) : [];
         if(x.type === "members") nextMembers[x.team] = Array.isArray(x.members) ? x.members.slice(0, SCH_MAX_MEMBERS) : [];
+        if(x.type === "schedule_day" && x.schDateKey && x.schTeam){
+          nextData[schGetKey(x.schDateKey, x.schTeam)] = {
+            ...x,
+            type:"day",
+            dateKey:x.schDateKey,
+            team:x.schTeam
+          };
+        }
         if(x.type === "day" && x.dateKey && x.team) nextData[schGetKey(x.dateKey, x.team)] = x;
       });
       schData = nextData;
@@ -3674,7 +3753,7 @@
       cal.insertAdjacentHTML("beforeend", `
         <div class="schDay ${key===todayKey?'today':''}" data-date="${key}">
           <div class="schDayNum">${d}</div>
-          ${data.shift ? `<div class="schCode">${schEsc(data.shift)}</div>` : ""}
+          ${data.shift ? `<div class="schCode ${schGetCodeValue(data.shift)==="휴무" ? "off" : ""}">${schEsc(data.shift)}</div>` : ""}
           ${data.memo ? `<div class="schMemo">${schEsc(data.memo)}</div>` : ""}
           ${memberText ? `<div class="schSmall">${schEsc(memberText)}</div>` : ""}
         </div>`);
@@ -3708,7 +3787,16 @@
       schCloseModal("schDayModal");
       document.getElementById("scheduleScreen")?.scrollTo({top:0, behavior:"smooth"});
     }
-    await setDoc(doc(db, SCH_COLLECTION, `day_${schSelectedDateKey}_${schSelectedTeam}`), data);
+    const remoteData = {
+      ...data,
+      type:"schedule_day",
+      schDateKey:schSelectedDateKey,
+      schTeam:schSelectedTeam,
+      // 일반 메모 조회(where team/dayKey)에 걸리지 않게 스케줄 전용 필드만 사용
+      team:null,
+      dateKey:null
+    };
+    await setDoc(doc(db, SCH_COLLECTION, `schedule_day_${schSelectedDateKey}_${schSelectedTeam}`), remoteData);
   }
 
   function schOpenDay(dateKey){
@@ -3790,7 +3878,7 @@
   async function schSaveMembers(){
     const names = [...schEl("schMemberList").querySelectorAll(".schMemberNameInput")].map(i=>i.value.trim()).filter(Boolean).slice(0,SCH_MAX_MEMBERS);
     schMembers[schSelectedTeam] = names;
-    await setDoc(doc(db, SCH_COLLECTION, `members_${schSelectedTeam}`), {type:"members", team:schSelectedTeam, members:names});
+    await setDoc(doc(db, SCH_COLLECTION, `schedule_members_${schSelectedTeam}`), {type:"schedule_members", schTeam:schSelectedTeam, members:names});
     schCloseModal("schMemberModal");
     schRenderCalendar();
   }
