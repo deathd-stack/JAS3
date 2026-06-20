@@ -1972,6 +1972,93 @@
     }
   }
 
+
+  /* ===== OVERTIME VIEW BIG VERTICAL CARDS ===== */
+  #schOtModal .schBox{
+    max-height:94vh!important;
+  }
+
+  #schOtModal .schSectionTitle{
+    font-size:22px!important;
+    text-align:center;
+    margin-bottom:14px!important;
+    color:#fff;
+  }
+
+  .schOtLine{
+    display:flex!important;
+    flex-direction:column!important;
+    flex-wrap:nowrap!important;
+    gap:12px!important;
+    max-height:68vh;
+    overflow:auto;
+    padding:2px 2px 10px;
+  }
+
+  .schOtTotal{
+    width:100%;
+    border-radius:24px;
+    padding:16px 18px;
+    background:linear-gradient(180deg,#ff9a2f,#ff6a00);
+    color:#fff;
+    font-weight:1000;
+    font-size:20px;
+    text-align:center;
+    box-shadow:0 12px 24px rgba(255,106,0,.24);
+  }
+
+  .schOtPill{
+    width:100%!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:center!important;
+    gap:10px!important;
+    border-radius:26px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,.06))!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    padding:18px 18px!important;
+    color:#fff!important;
+    box-shadow:0 12px 24px rgba(0,0,0,.18)!important;
+  }
+
+  .schOtName{
+    font-size:22px;
+    font-weight:1000;
+    line-height:1.15;
+    letter-spacing:-.2px;
+    color:#fff;
+    word-break:break-word;
+  }
+
+  .schOtTime{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    font-size:18px;
+    font-weight:1000;
+    color:#ffcf9b;
+  }
+
+  .schOtTime b{
+    color:#ffb347!important;
+    font-size:30px!important;
+    line-height:1;
+    font-weight:1000;
+    font-variant-numeric:tabular-nums;
+  }
+
+  @media (max-width:520px){
+    #schOtModal .schSectionTitle{font-size:20px!important;}
+    .schOtLine{gap:10px!important;max-height:70vh;}
+    .schOtTotal{font-size:18px;padding:14px 16px;}
+    .schOtPill{padding:16px 16px!important;border-radius:24px!important;}
+    .schOtName{font-size:21px;}
+    .schOtTime{font-size:17px;}
+    .schOtTime b{font-size:29px!important;}
+  }
+
 </style>
 </head>
 
@@ -3796,7 +3883,12 @@
       team:null,
       dateKey:null
     };
-    await setDoc(doc(db, SCH_COLLECTION, `schedule_day_${schSelectedDateKey}_${schSelectedTeam}`), remoteData);
+    try{
+      await setDoc(doc(db, SCH_COLLECTION, `schedule_day_${schSelectedDateKey}_${schSelectedTeam}`), remoteData);
+    }catch(error){
+      console.error("SCHEDULE REMOTE SAVE FAIL", error);
+      // 로컬 화면에는 이미 반영했기 때문에 저장창은 닫고, 권한 문제로 앱이 멈추지 않게 처리
+    }
   }
 
   function schOpenDay(dateKey){
@@ -3878,7 +3970,11 @@
   async function schSaveMembers(){
     const names = [...schEl("schMemberList").querySelectorAll(".schMemberNameInput")].map(i=>i.value.trim()).filter(Boolean).slice(0,SCH_MAX_MEMBERS);
     schMembers[schSelectedTeam] = names;
-    await setDoc(doc(db, SCH_COLLECTION, `schedule_members_${schSelectedTeam}`), {type:"schedule_members", schTeam:schSelectedTeam, members:names});
+    try{
+      await setDoc(doc(db, SCH_COLLECTION, `schedule_members_${schSelectedTeam}`), {type:"schedule_members", schTeam:schSelectedTeam, members:names});
+    }catch(error){
+      console.error("SCHEDULE MEMBERS REMOTE SAVE FAIL", error);
+    }
     schCloseModal("schMemberModal");
     schRenderCalendar();
   }
@@ -3899,8 +3995,15 @@
         totals[name] += schGetOt(data, name);
       });
     }
+    const totalMonthOt = members.reduce((sum, n)=>sum + (totals[n] || 0), 0);
     schEl("schOtTitle").textContent = `${schSelectedTeam} / ${y}.${schPad(m+1)} 연장시간`;
-    schEl("schOtList").innerHTML = members.length ? members.map(n=>`<span class="schOtPill">${schEsc(n)} <b>${schFormatOt(totals[n]||0)}</b></span>`).join("") : `<div class="schSmall">조원을 먼저 추가해줘.</div>`;
+    schEl("schOtList").innerHTML = members.length
+      ? members.map(n=>`
+        <div class="schOtPill">
+          <div class="schOtName">${schEsc(n)}</div>
+          <div class="schOtTime"><span>연장시간</span><b>${schFormatOt(totals[n]||0)}</b></div>
+        </div>`).join("")
+      : `<div class="schSmall">조원을 먼저 추가해줘.</div>`;
     schShowModal("schOtModal");
   }
 
