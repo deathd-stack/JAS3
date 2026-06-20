@@ -1866,6 +1866,42 @@
     .schTitle{font-size:25px;}
   }
 
+
+  /* ===== FIX: title calendar button to far right ===== */
+  #homeHeader{
+    position:relative;
+  }
+
+  #homeHeader .titleWrap{
+    position:relative;
+    width:min(calc(780px * var(--ui) / .65), calc(100% - 24px));
+    margin:0 auto;
+    padding-right:calc(56px * var(--ui));
+  }
+
+  #homeHeader .scheduleIconBtn{
+    position:absolute;
+    right:0;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:3;
+  }
+
+  #homeHeader .scheduleIconBtn:hover{
+    transform:translateY(-50%);
+  }
+
+  #homeHeader .scheduleIconBtn:active{
+    transform:translateY(-50%) scale(.96);
+  }
+
+  @media (max-width:520px){
+    #homeHeader .titleWrap{
+      width:calc(100% - 16px);
+      padding-right:44px;
+    }
+  }
+
 </style>
 </head>
 
@@ -1874,8 +1910,8 @@
 <header id="homeHeader" onclick="openPhoto()" ondblclick="openPhoto()">
   <div class="titleWrap">
     <div class="titleMain">JAS MEMO</div>
-    <button type="button" class="scheduleIconBtn" onclick="event.stopPropagation(); openSchedule();" title="SCHEDULE">📅</button>
     <div class="titleVer">VER.X</div>
+    <button type="button" class="scheduleIconBtn" onclick="event.stopPropagation(); openSchedule();" title="SCHEDULE">📅</button>
   </div>
 </header>
 
@@ -3134,7 +3170,15 @@
 
     dayOffset = calcDayOffsetFromDate(data.memoDate);
     updateDayLabel();
+
+    // SAVE 누르면 바로 메인 화면으로 복귀
     closeModal();
+
+    // Firebase 반영이 늦어도 현재 화면에는 즉시 표시되게 로컬 먼저 갱신
+    const oldIndex = memos.findIndex(x => x.id === data.id);
+    if(oldIndex >= 0) memos[oldIndex] = data;
+    else memos.unshift(data);
+    renderList(data.id);
 
     try{
       await saveMemoRemote(data);
@@ -3638,6 +3682,35 @@
     cal.querySelectorAll(".schDay[data-date]").forEach(el=>el.addEventListener("click",()=>schOpenDay(el.dataset.date)));
   }
 
+  async function schPersistCurrentDay(shouldClose = false){
+    if(!schSelectedDateKey || !schSelectedTeam) return;
+    const data = schGetDay(schSelectedDateKey, schSelectedTeam);
+    data.shift = schEl("schShiftInput").value.trim().toUpperCase();
+    data.memo = schEl("schMemoInput").value.trim();
+    data.type = "day";
+    data.dateKey = schSelectedDateKey;
+    data.team = schSelectedTeam;
+    data.leaves = data.leaves || {};
+    data.ot = data.ot || {};
+    schEl("schMemberEditList")?.querySelectorAll(".schMemberEdit").forEach(row=>{
+      const name = row.dataset.name;
+      const code = row.querySelector(".schMemberCode").value;
+      const ot = schParseOt(row.querySelector(".schMemberOt").value);
+      if(code) data.leaves[name] = {code, ot};
+      else if(ot) data.leaves[name] = {code:"", ot};
+      else delete data.leaves[name];
+      if(ot) data.ot[name] = ot;
+      else delete data.ot[name];
+    });
+    schData[schGetKey(schSelectedDateKey, schSelectedTeam)] = data;
+    schRenderCalendar();
+    if(shouldClose){
+      schCloseModal("schDayModal");
+      document.getElementById("scheduleScreen")?.scrollTo({top:0, behavior:"smooth"});
+    }
+    await setDoc(doc(db, SCH_COLLECTION, `day_${schSelectedDateKey}_${schSelectedTeam}`), data);
+  }
+
   function schOpenDay(dateKey){
     schSelectedDateKey = dateKey;
     const data = schGetDay(dateKey, schSelectedTeam);
@@ -3656,6 +3729,9 @@
         schEl("schShiftInput").value = code;
         grid.querySelectorAll("button").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
+
+        // 근무 코드는 누르는 즉시 달력에 반영/저장
+        schPersistCurrentDay(false).catch(err => console.error("SCHEDULE QUICK SAVE FAIL", err));
       });
       grid.appendChild(btn);
     });
@@ -3688,28 +3764,12 @@
   }
 
   async function schSaveDay(){
-    const data = schGetDay(schSelectedDateKey, schSelectedTeam);
-    data.shift = schEl("schShiftInput").value.trim().toUpperCase();
-    data.memo = schEl("schMemoInput").value.trim();
-    data.type = "day";
-    data.dateKey = schSelectedDateKey;
-    data.team = schSelectedTeam;
-    data.leaves = data.leaves || {};
-    data.ot = data.ot || {};
-    schEl("schMemberEditList").querySelectorAll(".schMemberEdit").forEach(row=>{
-      const name = row.dataset.name;
-      const code = row.querySelector(".schMemberCode").value;
-      const ot = schParseOt(row.querySelector(".schMemberOt").value);
-      if(code) data.leaves[name] = {code, ot};
-      else if(ot) data.leaves[name] = {code:"", ot};
-      else delete data.leaves[name];
-      if(ot) data.ot[name] = ot;
-      else delete data.ot[name];
-    });
-    await setDoc(doc(db, SCH_COLLECTION, `day_${schSelectedDateKey}_${schSelectedTeam}`), data);
-    schCloseModal("schDayModal");
-    schRenderCalendar();
-    document.getElementById("scheduleScreen")?.scrollTo({top:0, behavior:"smooth"});
+    try{
+      await schPersistCurrentDay(true);
+    }catch(error){
+      console.error(error);
+      alert("SCHEDULE SAVE FAIL");
+    }
   }
 
   function schOpenMembers(){
