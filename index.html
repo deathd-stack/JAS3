@@ -1790,7 +1790,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, where, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, doc, setDoc, deleteDoc, getDocs, onSnapshot, query, where, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDto0AprR6IbnTNqNzZ3qt_-piJ_Cbqd_Y",
@@ -1812,6 +1812,8 @@
   const EQUIP_KEY = "jas_equipment_v64";
   const AUTHOR_KEY = "jas_author_v1";
   const MAIN_TEAM_KEY = "jas_main_team_v1";
+  const AUTO_DELETE_DAYS = 3;
+  const AUTO_DELETE_MS = AUTO_DELETE_DAYS * 24 * 60 * 60 * 1000;
 
   const modal = document.getElementById("modal");
   const sheet = document.getElementById("sheet");
@@ -2085,6 +2087,46 @@
 
   async function deleteMemosRemote(ids){
     await Promise.all(ids.map(id => deleteDoc(doc(db, "memos", String(id)))));
+  }
+
+  function getMemoCreatedMs(data){
+    const createdAt = data?.createdAt;
+    if(createdAt?.seconds) return createdAt.seconds * 1000;
+    if(typeof createdAt === "number") return createdAt;
+    if(typeof createdAt === "string"){
+      const t = new Date(createdAt).getTime();
+      if(!Number.isNaN(t)) return t;
+    }
+
+    const idTime = Number(data?.id);
+    if(Number.isFinite(idTime) && idTime > 1000000000000) return idTime;
+
+    const dateText = data?.memoDate || data?.dayKey;
+    if(dateText){
+      const t = new Date(dateText).getTime();
+      if(!Number.isNaN(t)) return t;
+    }
+
+    return null;
+  }
+
+  async function autoDeleteOldMemos(){
+    const snapshot = await getDocs(collection(db, "memos"));
+    const now = Date.now();
+    const oldIds = [];
+
+    snapshot.forEach(docSnap => {
+      const data = docSnap.data() || {};
+      const createdMs = getMemoCreatedMs(data);
+      if(createdMs && now - createdMs >= AUTO_DELETE_MS){
+        oldIds.push(docSnap.id);
+      }
+    });
+
+    if(oldIds.length){
+      await Promise.all(oldIds.map(id => deleteDoc(doc(db, "memos", String(id)))));
+      memoCache.clear();
+    }
   }
 
   function moveDay(n){
@@ -2743,7 +2785,10 @@
     }
     saveAuthorName(savedAuthor);
 
+    const existingMemo = editId ? memos.find(x => x.id === editId) : null;
     const data = { id: editId ?? Date.now(), hasIn:pickInbound.checked, hasOut:pickOutbound.checked };
+    data.createdAt = existingMemo?.createdAt || data.id;
+    data.updatedAt = Date.now();
     data.team = selectedTeam;
     data.author = savedAuthor;
     data.memoDate = memoDate.value || getViewingDayKey();
@@ -3184,7 +3229,9 @@
   if(mainTeamSelect) mainTeamSelect.value = mainTeam;
   memoDate.value = getViewingDayKey();
   updateDayLabel();
-  listenMemos(activeTeamFilter, getViewingDayKey());
+  autoDeleteOldMemos()
+    .catch(error => console.error("AUTO DELETE FAIL", error))
+    .finally(() => listenMemos(activeTeamFilter, getViewingDayKey()));
   updateEquipBadge();
   syncPhotoFromStorage(false);
   updateGlobalCalcDisplay("0");
