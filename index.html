@@ -6,7 +6,16 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>JAS MEMO VER.X</title>
+<title>JAGOS VER.X</title>
+<meta name="application-name" content="JAGOS" />
+<meta name="apple-mobile-web-app-title" content="JAGOS" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#000000" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+<link rel="apple-touch-icon" href="icon-512.png" />
+
 
 <style>
   :root{
@@ -1634,7 +1643,7 @@
 
 
 
-  /* ===== JAS SCHEDULE EMBED ===== */
+  /* ===== JAGOS SCHEDULE EMBED ===== */
   .scheduleIconBtn{
     width:calc(42px * var(--ui));
     height:calc(42px * var(--ui));
@@ -2066,7 +2075,7 @@
 
 <header id="homeHeader" onclick="openPhoto()" ondblclick="openPhoto()">
   <div class="titleWrap">
-    <div class="titleMain">JAS MEMO</div>
+    <div class="titleMain">JAGOS</div>
     <div class="titleVer">VER.X</div>
     <button type="button" class="scheduleIconBtn" onclick="event.stopPropagation(); openSchedule();" title="SCHEDULE">📅</button>
   </div>
@@ -2074,7 +2083,7 @@
 
 <div id="scheduleScreen" aria-hidden="true">
   <div class="schTop">
-    <div class="schTitle">JAS SCHEDULE</div>
+    <div class="schTitle">JAGOS SCHEDULE</div>
     <button type="button" class="schCloseBtn schDark" onclick="closeSchedule()">MEMO</button>
   </div>
   <div class="schControls">
@@ -2171,7 +2180,7 @@
     </div>
 
     <div class="modalTitleTap" onclick="openPhoto()">
-      <div class="m1">JAS MEMO</div>
+      <div class="m1">JAGOS</div>
       <div class="m2">TAP TO OPEN PHOTO</div>
     </div>
 
@@ -3703,7 +3712,7 @@
 
 
 
-  /* ===== JAS SCHEDULE FIREBASE SHARED ===== */
+  /* ===== JAGOS SCHEDULE FIREBASE SHARED ===== */
   const SCH_COLLECTION = "memos"; // 스케줄도 기존 허용된 memos 컬렉션 안에 별도 문서로 저장
   const SCH_MAIN_KEY = "jas_schedule_main_team_v1";
   const SCH_TEAMS = [...Array.from({length:24},(_,i)=>`${i+1}조`), "토잉1", "토잉2", "토잉3", "통제"];
