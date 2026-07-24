@@ -2527,6 +2527,14 @@
   }
 
   function getTeamQuery(teamValue, dayKey){
+    // ALL 선택 시에도 해당 날짜의 모든 메모를 Firebase에서 불러온다.
+    if(teamValue === "ALL"){
+      return query(
+        collection(db, "memos"),
+        where("dayKey", "==", dayKey)
+      );
+    }
+
     return query(
       collection(db, "memos"),
       where("team", "==", teamValue),
@@ -2548,8 +2556,6 @@
       memos = [];
       renderList();
     }
-
-    if(teamValue === "ALL") return;
 
     const q = getTeamQuery(teamValue, dayKey);
 
@@ -3362,6 +3368,14 @@
 
     try{
       await saveMemoRemote(data);
+
+      // 저장 성공 후 현재 조/날짜 캐시에도 즉시 확정 반영한다.
+      const cacheKey = getCacheKey(activeTeamFilter, data.dayKey);
+      const cached = memoCache.has(cacheKey) ? [...memoCache.get(cacheKey)] : [];
+      const cachedIndex = cached.findIndex(x => Number(x.id) === Number(data.id));
+      if(cachedIndex >= 0) cached[cachedIndex] = data;
+      else cached.unshift(data);
+      memoCache.set(cacheKey, cached);
     }catch(error){
       console.error(error);
       alert("SAVE FAIL");
