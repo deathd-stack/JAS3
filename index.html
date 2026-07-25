@@ -574,6 +574,77 @@
   #equipBadge .b1{font-size:calc(18px * var(--ui));}
   #equipBadge .b2{font-size:calc(18px * var(--ui)); opacity:.95;}
 
+  /* Airline selector / registration layout */
+  .flightIdentityGrid{
+    display:grid;
+    grid-template-columns:minmax(72px,.8fr) minmax(100px,1fr) minmax(124px,1.25fr) minmax(40px,.45fr) minmax(82px,.85fr);
+    gap:calc(8px * var(--ui));
+    align-items:center;
+    margin:calc(10px * var(--ui)) 0 calc(14px * var(--ui));
+  }
+  .airlineSelect{
+    min-width:0;
+    width:100%;
+    height:calc(48px * var(--ui));
+    border-radius:calc(14px * var(--ui));
+    text-align:center;
+    font-weight:1000;
+    font-size:calc(16px * var(--ui));
+  }
+  .regInputWrap{
+    display:flex;
+    align-items:center;
+    min-width:0;
+    height:calc(48px * var(--ui));
+    border-radius:calc(14px * var(--ui));
+    overflow:hidden;
+    background:rgba(3,4,7,.9);
+    border:1px solid rgba(255,166,92,.22);
+  }
+  .regPrefix{
+    flex:0 0 auto;
+    min-width:calc(42px * var(--ui));
+    padding:0 calc(8px * var(--ui));
+    text-align:center;
+    font-weight:1000;
+    color:#ff9d4d;
+    border-right:1px solid rgba(255,166,92,.18);
+  }
+  .regSuffixInput{
+    min-width:0;
+    width:100%;
+    height:100%;
+    border:0 !important;
+    border-radius:0 !important;
+    text-transform:uppercase;
+    text-align:center;
+    font-weight:1000;
+  }
+  .memoCard.airline-IT{
+    background:linear-gradient(135deg,rgba(255,232,90,.22),rgba(255,196,0,.08) 30%),linear-gradient(180deg,rgba(42,36,9,.97),rgba(18,17,8,.98)) !important;
+    border-color:rgba(255,218,56,.62) !important;
+  }
+  .memoCard.airline-IT::before{background:linear-gradient(180deg,#fff59d,#ffd21f,#ffb300) !important;}
+  .memoCard.airline-AK{
+    background:linear-gradient(135deg,rgba(255,45,70,.25),rgba(180,0,24,.10) 32%),linear-gradient(180deg,rgba(45,8,14,.97),rgba(18,7,10,.98)) !important;
+    border-color:rgba(255,70,92,.62) !important;
+  }
+  .memoCard.airline-AK::before{background:linear-gradient(180deg,#ff7b8e,#ff2948,#b80020) !important;}
+  .memoCard.airline-KN{
+    background:linear-gradient(135deg,rgba(48,132,255,.25),rgba(0,73,184,.10) 32%),linear-gradient(180deg,rgba(7,24,48,.97),rgba(5,12,23,.98)) !important;
+    border-color:rgba(69,147,255,.62) !important;
+  }
+  .memoCard.airline-KN::before{background:linear-gradient(180deg,#83bcff,#2f86ff,#0754bd) !important;}
+  @media (max-width:560px){
+    .flightIdentityGrid{
+      grid-template-columns:minmax(58px,.72fr) minmax(82px,.92fr) minmax(106px,1.18fr) minmax(30px,.38fr) minmax(64px,.72fr);
+      gap:calc(5px * var(--ui));
+    }
+    .flightIdentityGrid .lab{font-size:calc(13px * var(--ui));}
+    .airlineSelect,.regInputWrap{height:calc(44px * var(--ui));}
+    .regPrefix{min-width:calc(34px * var(--ui));padding:0 calc(5px * var(--ui));}
+  }
+
   .modal{
     position:fixed;
     inset:0;
@@ -2068,6 +2139,44 @@
     .schOtTime b{font-size:29px!important;}
   }
 
+
+  /* Final airline memo colors: placed last so common theme rules cannot overwrite them */
+  .memoCard.airline-7C{
+    background:linear-gradient(180deg,#151519,#050507) !important;
+    border-color:rgba(255,255,255,.16) !important;
+  }
+  .memoCard.airline-7C::before{
+    background:linear-gradient(180deg,#555,#111,#000) !important;
+  }
+  .memoCard.airline-IT{
+    background:linear-gradient(180deg,#ffe96a,#f2bd00) !important;
+    border-color:#fff09a !important;
+    color:#171300 !important;
+  }
+  .memoCard.airline-IT::before{
+    background:linear-gradient(180deg,#fffbd0,#ffd400,#b77b00) !important;
+  }
+  .memoCard.airline-IT .textPill,
+  .memoCard.airline-IT .datePill,
+  .memoCard.airline-IT .teamBadge,
+  .memoCard.airline-IT .authorPill{
+    color:#171300 !important;
+    border-color:rgba(65,48,0,.28) !important;
+  }
+  .memoCard.airline-AK{
+    background:linear-gradient(180deg,#e72d45,#8e0016) !important;
+    border-color:#ff8191 !important;
+  }
+  .memoCard.airline-AK::before{
+    background:linear-gradient(180deg,#ff9aaa,#ff2948,#730010) !important;
+  }
+  .memoCard.airline-KN{
+    background:linear-gradient(180deg,#247fe8,#063c91) !important;
+    border-color:#83bbff !important;
+  }
+  .memoCard.airline-KN::before{
+    background:linear-gradient(180deg,#a9d0ff,#2888ff,#00387d) !important;
+  }
 </style>
 </head>
 
@@ -2158,12 +2267,10 @@
 
 <div class="bottomLeftButtons">
   <button class="equipBtn" type="button" onclick="openEquip()">EQUIPMENT</button>
-  <button class="itMemoBtn" onclick="location.href='https://deathd-stack.github.io/JAS2/'">IT MEMO</button>
 </div>
 
 <div class="bottomRightButtons">
   <div id="equipBadge"></div>
-  <button class="akMemoBtn" onclick="location.href='https://deathd-stack.github.io/JAS1/'">AK MEMO</button>
 </div>
 
 <input type="file" id="photoInput" accept="image/*" hidden />
@@ -2668,6 +2775,7 @@
       k.endsWith("-tt") ||
       k.endsWith("-tb") ||
       k === "SHARED-HL" ||
+      k.endsWith("-REG") ||
       k === "SHARED-HASH" ||
       k.startsWith("extraVal-")
     );
@@ -2705,6 +2813,14 @@
       document.querySelectorAll('input[data-k="SHARED-HL"]').forEach(el=>{
         if(el !== t) el.value = t.value;
       });
+      return;
+    }
+
+    if(k.endsWith("-REG")){
+      const type = k.split("-")[0];
+      const airline = document.querySelector(`select[data-k="${type}-AIRLINE"]`)?.value || "7C";
+      if(airline === "AK") t.value = String(t.value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0,3);
+      else t.value = onlyNum(t.value, airline === "7C" ? 4 : 3);
       return;
     }
 
@@ -2911,10 +3027,13 @@
     const hlMatch = headerLine.match(/HL\s*([0-9]{3,4})/i);
 
     if(flightMatch){
+      const airlineSel = document.querySelector(`select[data-k="${type}-AIRLINE"]`);
+      if(airlineSel){ airlineSel.value = "7C"; updateAirlineFields(type); }
       setVal(`[data-k="${type}-7C"]`, flightMatch[1]);
     }
     if(hlMatch){
-      document.querySelectorAll('input[data-k="SHARED-HL"]').forEach(el => el.value = hlMatch[1]);
+      const regInput = document.querySelector(`input[data-k="${type}-REG"]`);
+      if(regInput) regInput.value = hlMatch[1];
     }
 
     const staStdKey = type === "INBOUND" ? "STA" : "STD";
@@ -3013,14 +3132,52 @@
     });
   }
 
+  const AIRLINE_CONFIG = {
+    "7C": { regPrefix:"HL", regDigits:4, regMode:"numeric", regPlaceholder:"0000" },
+    "IT": { regPrefix:"B5", regDigits:3, regMode:"numeric", regPlaceholder:"000" },
+    "AK": { regPrefix:"9M", regDigits:3, regMode:"alpha", regPlaceholder:"ABC" },
+    "KN": { regPrefix:"B1", regDigits:3, regMode:"numeric", regPlaceholder:"000" }
+  };
+
+  function getMemoAirline(memoData, type){
+    return String(memoData?.[type+"-AIRLINE"] || "7C").toUpperCase();
+  }
+
+  function getMemoRegistration(memoData, type, airline){
+    const saved = memoData?.[type+"-REG"];
+    if(saved !== undefined && saved !== null && saved !== "") return String(saved).toUpperCase();
+    return airline === "7C" ? String(memoData?.sharedHL || "") : "";
+  }
+
+  function updateAirlineFields(type, root){
+    const section = root || sections.querySelector(`.section[data-type="${type}"]`);
+    if(!section) return;
+    const select = section.querySelector(`select[data-k="${type}-AIRLINE"]`);
+    const regInput = section.querySelector(`input[data-k="${type}-REG"]`);
+    const regPrefix = section.querySelector(`[data-reg-prefix="${type}"]`);
+    const airline = select?.value || "7C";
+    const cfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
+    if(regPrefix) regPrefix.textContent = cfg.regPrefix;
+    if(regInput){
+      regInput.maxLength = cfg.regDigits;
+      regInput.placeholder = cfg.regPlaceholder;
+      regInput.inputMode = cfg.regMode === "numeric" ? "numeric" : "text";
+      regInput.value = cfg.regMode === "alpha"
+        ? String(regInput.value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0,cfg.regDigits)
+        : onlyNum(regInput.value, cfg.regDigits);
+    }
+  }
+
   function makeSection(type, memoData){
     const d = document.createElement("div");
     d.className = "section";
     d.dataset.type = type;
 
     const savedTime = memoData ? (memoData[type+"-TIME"] || "") : "";
-    const local7C = memoData ? (memoData[type+"-7C"] || "") : "";
-    const sharedHL = memoData ? (memoData.sharedHL || "") : "";
+    const airline = getMemoAirline(memoData, type);
+    const localFlight = memoData ? (memoData[type+"-7C"] || "") : "";
+    const localReg = getMemoRegistration(memoData, type, airline);
+    const regCfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
     const sharedHASH = memoData ? (memoData.sharedHASH || "") : "";
     const v = (k)=> memoData ? (memoData[type+"-"+k] || "") : "";
     const noteV = memoData ? (memoData[type+"-note"] || "") : "";
@@ -3050,11 +3207,15 @@
         </div>
       </div>
 
-      <div class="rowGrid3">
-        <div class="lab">7C</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-7C" value="${local7C}">
-        <div class="lab">HL</div>
-        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="SHARED-HL" value="${sharedHL}">
+      <div class="flightIdentityGrid">
+        <select class="airlineSelect" data-k="${type}-AIRLINE" aria-label="AIRLINE">
+          ${["7C","IT","AK","KN"].map(code => `<option value="${code}" ${code===airline ? "selected" : ""}>${code}</option>`).join("")}
+        </select>
+        <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-7C" value="${localFlight}">
+        <div class="regInputWrap">
+          <span class="regPrefix" data-reg-prefix="${type}">${regCfg.regPrefix}</span>
+          <input class="regSuffixInput" inputmode="${regCfg.regMode === "numeric" ? "numeric" : "text"}" maxlength="${regCfg.regDigits}" placeholder="${regCfg.regPlaceholder}" data-k="${type}-REG" value="${localReg}">
+        </div>
         <div class="lab">#</div>
         <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
       </div>
@@ -3137,6 +3298,10 @@
 
       <textarea data-k="${type}-note" placeholder="NOTE (${type})">${noteV}</textarea>
     `;
+
+    const airlineSelect = d.querySelector(`select[data-k="${type}-AIRLINE"]`);
+    airlineSelect?.addEventListener("change", ()=> updateAirlineFields(type, d));
+    updateAirlineFields(type, d);
 
     const timeBtn = d.querySelector(`[data-timebtn="${type}"]`);
     const timeShown = d.querySelector(`#${type}-TIMESHOWN`);
@@ -3294,13 +3459,19 @@
     data.memoDate = memoDate.value || getViewingDayKey();
     data.dayKey = data.memoDate;
 
-    data.sharedHL = pad(document.querySelector('input[data-k="SHARED-HL"]')?.value || "", 4);
+    const first7CReg = [...document.querySelectorAll('.section')].map(root=>({
+      airline: root.querySelector('select[data-k$="-AIRLINE"]')?.value || "7C",
+      reg: root.querySelector('input[data-k$="-REG"]')?.value || ""
+    })).find(x=>x.airline === "7C");
+    data.sharedHL = pad(first7CReg?.reg || "", 4);
     data.sharedHASH = pad(document.querySelector('input[data-k="SHARED-HASH"]')?.value || "", 3);
 
     ["INBOUND","OUTBOUND"].forEach(type=>{
       const root = sections.querySelector(`.section[data-type="${type}"]`);
 
       if(!root){
+        data[type+"-AIRLINE"] = "7C";
+        data[type+"-REG"] = "";
         data[type+"-7C"] = "";
         data[type+"-STA"] = "";
         data[type+"-STD"] = "";
@@ -3323,6 +3494,12 @@
       const gi = (k)=> root.querySelector(`[data-k="${type}-${k}"]`);
       const note = root.querySelector(`textarea[data-k="${type}-note"]`);
 
+      const airline = root.querySelector(`select[data-k="${type}-AIRLINE"]`)?.value || "7C";
+      const regRaw = root.querySelector(`input[data-k="${type}-REG"]`)?.value || "";
+      data[type+"-AIRLINE"] = airline;
+      data[type+"-REG"] = airline === "AK"
+        ? String(regRaw).toUpperCase().replace(/[^A-Z]/g, "").slice(0,3)
+        : pad(regRaw, airline === "7C" ? 4 : 3);
       data[type+"-7C"] = pad(gi("7C")?.value || "", 4);
       data[type+"-STA"] = type==="INBOUND" ? pad(gi("STA")?.value, 4) : "";
       data[type+"-STD"] = type==="OUTBOUND" ? pad(gi("STD")?.value, 4) : "";
@@ -3382,24 +3559,33 @@
     }
   }
 
+  function getDisplayIdentity(m, type){
+    const airline = getMemoAirline(m, type);
+    const flight = String(m[type+"-7C"] || "").trim();
+    const cfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
+    const reg = getMemoRegistration(m, type, airline).trim();
+    return { airline, flight, regPrefix:cfg.regPrefix, reg };
+  }
+
   function formatCombinedLine(m){
-    const v7cIn = (m["INBOUND-7C"] || "").trim();
-    const v7cOut = (m["OUTBOUND-7C"] || "").trim();
-    const v7c = v7cIn || v7cOut || "";
-    const vhl = (m.sharedHL || "").trim();
-    const hash = (m.sharedHASH || "").trim();
-    return `7C[${v7c}] HL[${vhl}] #[${hash}]`;
+    const type = m.hasIn !== false ? "INBOUND" : "OUTBOUND";
+    const x = getDisplayIdentity(m, type);
+    const hash = String(m.sharedHASH || "").trim();
+    return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}] #[${hash}]`;
   }
 
   function formatSplitLine(m, type){
-    const v7c = (m[type+"-7C"] || "").trim();
-    const vhl = (m.sharedHL || "").trim();
-    const hash = (m.sharedHASH || "").trim();
+    const x = getDisplayIdentity(m, type);
+    const hash = String(m.sharedHASH || "").trim();
+    if(type === "INBOUND") return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}]`;
+    return `${x.airline}[${x.flight}] #[${hash}]`;
+  }
 
-    if(type === "INBOUND"){
-      return `7C[${v7c}] HL[${vhl}]`;
-    }
-    return `7C[${v7c}] #[${hash}]`;
+  function getCardAirline(m){
+    const inAirline = m.hasIn !== false ? getMemoAirline(m, "INBOUND") : "";
+    const outAirline = m.hasOut !== false ? getMemoAirline(m, "OUTBOUND") : "";
+    // 한 메모 안에서 한쪽이라도 외항사를 선택하면 해당 색상을 우선 적용
+    return [inAirline, outAirline].find(code => code && code !== "7C") || inAirline || outAirline || "7C";
   }
 
   function renderList(flashId){
@@ -3435,7 +3621,8 @@
       }
 
       const card = document.createElement("div");
-      card.className = "memoCard" + (m.id===flashId ? " flash" : "");
+      const cardAirline = getCardAirline(m);
+      card.className = `memoCard airline-${cardAirline}` + (m.id===flashId ? " flash" : "");
       card.innerHTML = `
         <div class="memoRow">
           <input class="selBox" type="checkbox" data-id="${m.id}">
@@ -3472,7 +3659,6 @@
     };
     rebuildSectionsFromMemo(m);
 
-    document.querySelectorAll('input[data-k="SHARED-HL"]').forEach(el => el.value = m.sharedHL || "");
     document.querySelectorAll('input[data-k="SHARED-HASH"]').forEach(el => el.value = m.sharedHASH || "");
     if(quickTeamSelect){
       quickTeamSelect.value = m.team || "ALL";
