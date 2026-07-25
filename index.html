@@ -577,7 +577,7 @@
   /* Airline selector / registration layout */
   .flightIdentityGrid{
     display:grid;
-    grid-template-columns:minmax(72px,.8fr) minmax(100px,1fr) minmax(124px,1.25fr) minmax(40px,.45fr) minmax(82px,.85fr);
+    grid-template-columns:repeat(4,minmax(0,1fr));
     gap:calc(8px * var(--ui));
     align-items:center;
     margin:calc(10px * var(--ui)) 0 calc(14px * var(--ui));
@@ -620,6 +620,36 @@
     text-align:center;
     font-weight:1000;
   }
+
+  .hashInputWrap{
+    display:flex;
+    align-items:center;
+    min-width:0;
+    width:100%;
+    height:calc(48px * var(--ui));
+    border-radius:calc(14px * var(--ui));
+    overflow:hidden;
+    background:rgba(3,4,7,.9);
+    border:1px solid rgba(255,166,92,.22);
+  }
+  .hashPrefix{
+    flex:0 0 auto;
+    min-width:calc(34px * var(--ui));
+    padding:0 calc(5px * var(--ui));
+    text-align:center;
+    font-weight:1000;
+    color:#ff9d4d;
+    border-right:1px solid rgba(255,166,92,.18);
+  }
+  .hashSuffixInput{
+    min-width:0;
+    width:100%;
+    height:100%;
+    border:0 !important;
+    border-radius:0 !important;
+    text-align:center;
+    font-weight:1000;
+  }
   .memoCard.airline-IT{
     background:linear-gradient(135deg,rgba(255,232,90,.22),rgba(255,196,0,.08) 30%),linear-gradient(180deg,rgba(42,36,9,.97),rgba(18,17,8,.98)) !important;
     border-color:rgba(255,218,56,.62) !important;
@@ -637,11 +667,11 @@
   .memoCard.airline-KN::before{background:linear-gradient(180deg,#83bcff,#2f86ff,#0754bd) !important;}
   @media (max-width:560px){
     .flightIdentityGrid{
-      grid-template-columns:minmax(58px,.72fr) minmax(82px,.92fr) minmax(106px,1.18fr) minmax(30px,.38fr) minmax(64px,.72fr);
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:calc(5px * var(--ui));
     }
     .flightIdentityGrid .lab{font-size:calc(13px * var(--ui));}
-    .airlineSelect,.regInputWrap{height:calc(44px * var(--ui));}
+    .airlineSelect,.regInputWrap,.hashInputWrap{height:calc(44px * var(--ui));}
     .regPrefix{min-width:calc(34px * var(--ui));padding:0 calc(5px * var(--ui));}
   }
 
@@ -3273,8 +3303,10 @@
           <span class="regPrefix" data-reg-prefix="${type}">${regCfg.regPrefix}</span>
           <input class="regSuffixInput" inputmode="${regCfg.regMode === "numeric" ? "numeric" : "text"}" maxlength="${regCfg.regDigits}" placeholder="${regCfg.regPlaceholder}" data-k="${type}-REG" value="${localReg}">
         </div>
-        <div class="lab">#</div>
-        <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
+        <div class="hashInputWrap">
+          <span class="hashPrefix">#</span>
+          <input class="hashSuffixInput" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
+        </div>
       </div>
 
       <div class="row" data-cmpt-row="1">
@@ -3658,14 +3690,14 @@
     const type = m.hasIn !== false ? "INBOUND" : "OUTBOUND";
     const x = getDisplayIdentity(m, type);
     const hash = String(m.sharedHASH || "").trim();
-    return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}] #[${hash}]`;
+    return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}]#[${hash}]`;
   }
 
   function formatSplitLine(m, type){
     const x = getDisplayIdentity(m, type);
     const hash = String(m.sharedHASH || "").trim();
     if(type === "INBOUND") return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}]`;
-    return `${x.airline}[${x.flight}] #[${hash}]`;
+    return `${x.airline}[${x.flight}]#[${hash}]`;
   }
 
   function getCardAirline(m){
@@ -3708,8 +3740,18 @@
       }
 
       const card = document.createElement("div");
-      const cardAirline = getCardAirline(m);
+      const cardAirline = String(getCardAirline(m) || "7C").toUpperCase();
       card.className = `memoCard airline-${cardAirline}` + (m.id===flashId ? " flash" : "");
+      const airlineCardStyles = {
+        "7C": {background:"linear-gradient(180deg,#151519,#050507)", border:"rgba(255,255,255,.16)"},
+        "IT": {background:"linear-gradient(180deg,#ffe96a,#f2bd00)", border:"#fff09a"},
+        "AK": {background:"linear-gradient(180deg,#e72d45,#8e0016)", border:"#ff8191"},
+        "KN": {background:"linear-gradient(180deg,#247fe8,#063c91)", border:"#83bbff"}
+      };
+      const airlineStyle = airlineCardStyles[cardAirline] || airlineCardStyles["7C"];
+      card.style.setProperty("background", airlineStyle.background, "important");
+      card.style.setProperty("border-color", airlineStyle.border, "important");
+      if(cardAirline === "IT") card.style.setProperty("color", "#171300", "important");
       card.innerHTML = `
         <div class="memoRow">
           <input class="selBox" type="checkbox" data-id="${m.id}">
