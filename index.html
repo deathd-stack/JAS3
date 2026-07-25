@@ -481,6 +481,18 @@
     text-transform:uppercase;
   }
 
+
+  /* VER.Z identity rows: one complete flight per line */
+  .memoCard .line{align-items:center;}
+  .memoCard .textPill.identityLine{
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:clip !important;
+    word-break:normal !important;
+    font-size:clamp(11px, 3.6vw, calc(18px * var(--ui))) !important;
+    letter-spacing:-.35px;
+  }
+
   .datePill{
     margin-top:calc(8px * var(--ui));
     margin-left:calc(42px * var(--ui));
@@ -2869,7 +2881,7 @@
       k.endsWith("-tb") ||
       k === "SHARED-HL" ||
       k.endsWith("-REG") ||
-      k === "SHARED-HASH" ||
+      k.endsWith("-HASH") ||
       k.startsWith("extraVal-")
     );
   }
@@ -2914,14 +2926,25 @@
       const airline = document.querySelector(`select[data-k="${type}-AIRLINE"]`)?.value || "7C";
       if(airline === "AK") t.value = String(t.value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0,3);
       else t.value = onlyNum(t.value, airline === "7C" ? 4 : 3);
+      // INBOUND 등록번호를 OUTBOUND에 기본 공유. OUTBOUND는 이후 직접 수정 가능.
+      if(type === "INBOUND"){
+        const outReg = document.querySelector('input[data-k="OUTBOUND-REG"]');
+        if(outReg && !outReg.dataset.userEdited) outReg.value = t.value;
+      }else if(type === "OUTBOUND"){
+        t.dataset.userEdited = "1";
+      }
       return;
     }
 
-    if(k === "SHARED-HASH"){
+    if(k.endsWith("-HASH")){
       t.value = onlyNum(t.value, 3);
-      document.querySelectorAll('input[data-k="SHARED-HASH"]').forEach(el=>{
-        if(el !== t) el.value = t.value;
-      });
+      // INBOUND 값을 기본 공유하되 OUTBOUND는 항공기 변경 시 직접 수정 가능
+      if(k === "INBOUND-HASH"){
+        const outHash = document.querySelector('input[data-k="OUTBOUND-HASH"]');
+        if(outHash && !outHash.dataset.userEdited) outHash.value = t.value;
+      }else if(k === "OUTBOUND-HASH"){
+        t.dataset.userEdited = "1";
+      }
       return;
     }
 
@@ -3016,7 +3039,7 @@
 
     if(k === "SHARED-HL"){
       activeCalcInput.value = digits.slice(0,4);
-    }else if(k === "SHARED-HASH"){
+    }else if(k.endsWith("-HASH")){
       activeCalcInput.value = digits.slice(0,3);
     }else if(k.endsWith("-7C") || k.endsWith("-STA") || k.endsWith("-STD")){
       activeCalcInput.value = digits.slice(0,4);
@@ -3342,6 +3365,9 @@
     const localReg = getMemoRegistration(memoData, type, airline);
     const regCfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
     const sharedHASH = memoData ? (memoData.sharedHASH || "") : "";
+    const localHASH = memoData
+      ? String(memoData[type+"-HASH"] ?? memoData.sharedHASH ?? "")
+      : "";
     const v = (k)=> memoData ? (memoData[type+"-"+k] || "") : "";
     const noteV = memoData ? (memoData[type+"-note"] || "") : "";
     const vtt = memoData ? (memoData[type+"-tt"] || "") : "";
@@ -3385,7 +3411,7 @@
         </div>
         <div class="hashInputWrap">
           <span class="hashPrefix">#</span>
-          <input class="hashSuffixInput" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
+          <input class="hashSuffixInput" inputmode="numeric" maxlength="3" placeholder="000" data-k="${type}-HASH" value="${localHASH}">
         </div>
       </div>
 
@@ -3481,6 +3507,16 @@
     });
     updateAirlineFields(type, d);
     airlineSelect.disabled = false;
+
+    // 새 메모에서는 OUTBOUND의 항공기 등록번호와 #을 INBOUND 값으로 기본 공유
+    if(type === "OUTBOUND" && !memoData){
+      const inReg = sections.querySelector('input[data-k="INBOUND-REG"]');
+      const inHash = sections.querySelector('input[data-k="INBOUND-HASH"]');
+      const outReg = d.querySelector('input[data-k="OUTBOUND-REG"]');
+      const outHash = d.querySelector('input[data-k="OUTBOUND-HASH"]');
+      if(outReg && inReg) outReg.value = inReg.value;
+      if(outHash && inHash) outHash.value = inHash.value;
+    }
 
     const cmpt1Input = d.querySelector(`textarea[data-k="${type}-cmpt1"]`);
     cmpt1Input?.addEventListener("input", ()=>{
@@ -3657,7 +3693,8 @@
       reg: root.querySelector('input[data-k$="-REG"]')?.value || ""
     })).find(x=>x.airline === "7C");
     data.sharedHL = pad(first7CReg?.reg || "", 4);
-    data.sharedHASH = pad(document.querySelector('input[data-k="SHARED-HASH"]')?.value || "", 3);
+    const inboundHashValue = document.querySelector('input[data-k="INBOUND-HASH"]')?.value || "";
+    data.sharedHASH = pad(inboundHashValue, 3);
 
     ["INBOUND","OUTBOUND"].forEach(type=>{
       const root = sections.querySelector(`.section[data-type="${type}"]`);
@@ -3665,6 +3702,7 @@
       if(!root){
         data[type+"-AIRLINE"] = "7C";
         data[type+"-REG"] = "";
+        data[type+"-HASH"] = "";
         data[type+"-7C"] = "";
         data[type+"-STA"] = "";
         data[type+"-STD"] = "";
@@ -3694,6 +3732,7 @@
       data[type+"-REG"] = airline === "AK"
         ? String(regRaw).toUpperCase().replace(/[^A-Z]/g, "").slice(0,3)
         : pad(regRaw, airline === "7C" ? 4 : 3);
+      data[type+"-HASH"] = pad(root.querySelector(`input[data-k="${type}-HASH"]`)?.value || "", 3);
       data[type+"-7C"] = pad(gi("7C")?.value || "", 4);
       data[type+"-STA"] = type==="INBOUND" ? pad(gi("STA")?.value, 4) : "";
       data[type+"-STD"] = type==="OUTBOUND" ? pad(gi("STD")?.value, 4) : "";
@@ -3766,18 +3805,19 @@
     return { airline, flight, regPrefix:cfg.regPrefix, reg };
   }
 
+  function getDisplayHash(m, type){
+    return String(m[type+"-HASH"] ?? m.sharedHASH ?? "").trim();
+  }
+
   function formatCombinedLine(m){
     const type = m.hasIn !== false ? "INBOUND" : "OUTBOUND";
-    const x = getDisplayIdentity(m, type);
-    const hash = String(m.sharedHASH || "").trim();
-    return `${x.airline}${x.flight} ${x.regPrefix}${x.reg}#${hash}`;
+    return formatSplitLine(m, type);
   }
 
   function formatSplitLine(m, type){
     const x = getDisplayIdentity(m, type);
-    const hash = String(m.sharedHASH || "").trim();
-    if(type === "INBOUND") return `${x.airline}${x.flight} ${x.regPrefix}${x.reg}`;
-    return `${x.airline}[${x.flight}]#[${hash}]`;
+    const hash = getDisplayHash(m, type);
+    return `${x.airline}${x.flight} ${x.regPrefix} ${x.reg} #${hash}`.replace(/\s+/g, " ").trim();
   }
 
   function getCardAirline(m){
@@ -3809,13 +3849,13 @@
 
       if(hasIn && hasOut){
         linesHtml = `
-          <div class="line"><div class="tagPill">IN</div><div class="textPill">${formatSplitLine(m, "INBOUND")}</div></div>
-          <div class="line"><div class="tagPill">OUT</div><div class="textPill">${formatSplitLine(m, "OUTBOUND")}</div></div>
+          <div class="line"><div class="tagPill">IN</div><div class="textPill identityLine">${formatSplitLine(m, "INBOUND")}</div></div>
+          <div class="line"><div class="tagPill">OUT</div><div class="textPill identityLine">${formatSplitLine(m, "OUTBOUND")}</div></div>
         `;
       }else{
         const singleTag = hasIn ? "IN" : "OUT";
         linesHtml = `
-          <div class="line"><div class="tagPill">${singleTag}</div><div class="textPill">${formatCombinedLine(m)}</div></div>
+          <div class="line"><div class="tagPill">${singleTag}</div><div class="textPill identityLine">${formatCombinedLine(m)}</div></div>
         `;
       }
 
@@ -3868,7 +3908,13 @@
     };
     rebuildSectionsFromMemo(m);
 
-    document.querySelectorAll('input[data-k="SHARED-HASH"]').forEach(el => el.value = m.sharedHASH || "");
+    const inHash = document.querySelector('input[data-k="INBOUND-HASH"]');
+    const outHash = document.querySelector('input[data-k="OUTBOUND-HASH"]');
+    if(inHash) inHash.value = m["INBOUND-HASH"] ?? m.sharedHASH ?? "";
+    if(outHash){
+      outHash.value = m["OUTBOUND-HASH"] ?? m.sharedHASH ?? "";
+      if(String(outHash.value) !== String(inHash?.value || "")) outHash.dataset.userEdited = "1";
+    }
     if(quickTeamSelect){
       quickTeamSelect.value = m.team || "ALL";
     }
