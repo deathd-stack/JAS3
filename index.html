@@ -2177,6 +2177,18 @@
   .memoCard.airline-KN::before{
     background:linear-gradient(180deg,#a9d0ff,#2888ff,#00387d) !important;
   }
+
+  .fixedCmptValue{
+    font-weight:900 !important;
+    text-align:center !important;
+    letter-spacing:.12em;
+    opacity:1 !important;
+    cursor:not-allowed;
+  }
+  select.airlineSelect:disabled{
+    opacity:1;
+    cursor:not-allowed;
+  }
 </style>
 </head>
 
@@ -2542,9 +2554,13 @@
     const textarea = root.querySelector(`[data-k="${type}-cmpt${idx}"]`);
     const text = cleanTextUpper(textarea?.value || "");
     if(type === "OUTBOUND" && (idx === 1 || idx === 2)){
-      const sel = root.querySelector(`[data-k="${type}-cmpt${idx}-f"]`);
-      const level = sel ? String(sel.value || "0") : "0";
-      return text ? `F${level} ${text}` : `F${level}`;
+      const airline = root.querySelector(`select[data-k="${type}-AIRLINE"]`)?.value || "7C";
+      const usesFSelect = idx === 2 || (idx === 1 && airline === "7C");
+      if(usesFSelect){
+        const sel = root.querySelector(`[data-k="${type}-cmpt${idx}-f"]`);
+        const level = sel ? String(sel.value || "0") : "0";
+        return text ? `F${level} ${text}` : `F${level}`;
+      }
     }
     return text;
   }
@@ -3133,10 +3149,10 @@
   }
 
   const AIRLINE_CONFIG = {
-    "7C": { regPrefix:"HL", regDigits:4, regMode:"numeric", regPlaceholder:"0000" },
-    "IT": { regPrefix:"B5", regDigits:3, regMode:"numeric", regPlaceholder:"000" },
-    "AK": { regPrefix:"9M", regDigits:3, regMode:"alpha", regPlaceholder:"ABC" },
-    "KN": { regPrefix:"B1", regDigits:3, regMode:"numeric", regPlaceholder:"000" }
+    "7C": { regPrefix:"HL", regDigits:4, regMode:"numeric", regPlaceholder:"0000", cmpts:[1,2,3,4] },
+    "IT": { regPrefix:"B5", regDigits:3, regMode:"numeric", regPlaceholder:"000", cmpts:[1,3,4,5], fixedCmpt1:"FAK3" },
+    "AK": { regPrefix:"9M", regDigits:3, regMode:"alpha", regPlaceholder:"ABC", cmpts:[1,3,4,5] },
+    "KN": { regPrefix:"B1", regDigits:3, regMode:"numeric", regPlaceholder:"000", cmpts:[1,2,3,4] }
   };
 
   function getMemoAirline(memoData, type){
@@ -3147,6 +3163,16 @@
     const saved = memoData?.[type+"-REG"];
     if(saved !== undefined && saved !== null && saved !== "") return String(saved).toUpperCase();
     return airline === "7C" ? String(memoData?.sharedHL || "") : "";
+  }
+
+  function syncAirlineSelection(sourceType, airline){
+    const otherType = sourceType === "INBOUND" ? "OUTBOUND" : "INBOUND";
+    const otherSection = sections.querySelector(`.section[data-type="${otherType}"]`);
+    const otherSelect = otherSection?.querySelector(`select[data-k="${otherType}-AIRLINE"]`);
+    if(otherSelect && otherSelect.value !== airline){
+      otherSelect.value = airline;
+      updateAirlineFields(otherType, otherSection);
+    }
   }
 
   function updateAirlineFields(type, root){
@@ -3166,6 +3192,33 @@
         ? String(regInput.value || "").toUpperCase().replace(/[^A-Z]/g, "").slice(0,cfg.regDigits)
         : onlyNum(regInput.value, cfg.regDigits);
     }
+    section.querySelectorAll('[data-cmpt-row]').forEach(row=>{
+      const no = Number(row.dataset.cmptRow);
+      row.style.display = cfg.cmpts.includes(no) ? "" : "none";
+    });
+    if(type === "OUTBOUND"){
+      const cmpt1FWrap = section.querySelector('[data-cmpt-f-wrap="1"]');
+      const cmpt1FSelect = section.querySelector(`[data-k="${type}-cmpt1-f"]`);
+      const showCmpt1F = airline === "7C";
+      if(cmpt1FWrap) cmpt1FWrap.style.display = showCmpt1F ? "" : "none";
+      if(!showCmpt1F && cmpt1FSelect) cmpt1FSelect.value = "0";
+    }
+    const cmpt1 = section.querySelector(`textarea[data-k="${type}-cmpt1"]`);
+    if(cmpt1){
+      const fixed = cfg.fixedCmpt1 || "";
+      cmpt1.readOnly = false;
+      cmpt1.classList.remove("fixedCmptValue");
+      if(fixed){
+        const current = String(cmpt1.value || "");
+        if(!current.toUpperCase().startsWith(fixed)){
+          cmpt1.value = fixed + current;
+        }
+        cmpt1.dataset.fixedPrefix = fixed;
+      }else{
+        delete cmpt1.dataset.fixedPrefix;
+        if(cmpt1.value === "FAK3") cmpt1.value = "";
+      }
+    }
   }
 
   function makeSection(type, memoData){
@@ -3184,8 +3237,12 @@
     const vtt = memoData ? (memoData[type+"-tt"] || "") : "";
     const vtb = memoData ? (memoData[type+"-tb"] || "") : "";
 
-    const cmpt1Raw = memoData ? (memoData[type+"-cmpt1"] || "") : "";
+    const savedCmpt1 = memoData ? (memoData[type+"-cmpt1"] || "") : "";
+    const cmpt1Raw = airline === "IT"
+      ? (String(savedCmpt1).toUpperCase().startsWith("FAK3") ? savedCmpt1 : "FAK3" + (savedCmpt1 === "FAK" ? "" : savedCmpt1))
+      : savedCmpt1;
     const cmpt2Raw = memoData ? (memoData[type+"-cmpt2"] || "") : "";
+    const cmpt5Raw = memoData ? (memoData[type+"-cmpt5"] || "") : "";
     const cmpt1Parsed = parseFStoredValue(cmpt1Raw);
     const cmpt2Parsed = parseFStoredValue(cmpt2Raw);
 
@@ -3220,11 +3277,11 @@
         <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
       </div>
 
-      <div class="row">
+      <div class="row" data-cmpt-row="1">
         <div class="lab" style="min-width:96px;">CMPT 1</div>
         <div class="cmptWrap">
           ${type === "OUTBOUND" ? `
-            <div class="cmptFWrap">
+            <div class="cmptFWrap" data-cmpt-f-wrap="1">
               <div class="cmptFLabel">F</div>
               <select class="cmptFSelect" data-k="${type}-cmpt1-f">
                 ${[0,1,2,3,4].map(n => `<option value="${n}" ${String(n)===cmpt1Parsed.level ? "selected" : ""}>${n}</option>`).join("")}
@@ -3235,7 +3292,7 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" data-cmpt-row="2">
         <div class="lab" style="min-width:96px;">CMPT 2</div>
         <div class="cmptWrap">
           ${type === "OUTBOUND" ? `
@@ -3250,14 +3307,19 @@
         </div>
       </div>
 
-      <div class="row">
+      <div class="row" data-cmpt-row="3">
         <div class="lab" style="min-width:96px;">CMPT 3</div>
         <textarea class="cmptArea" data-k="${type}-cmpt3" placeholder="TEXT">${memoData ? (memoData[type+'-cmpt3'] || '') : ''}</textarea>
       </div>
 
-      <div class="row">
+      <div class="row" data-cmpt-row="4">
         <div class="lab" style="min-width:96px;">CMPT 4</div>
         <textarea class="cmptArea" data-k="${type}-cmpt4" placeholder="TEXT">${memoData ? (memoData[type+'-cmpt4'] || '') : ''}</textarea>
+      </div>
+
+      <div class="row" data-cmpt-row="5">
+        <div class="lab" style="min-width:96px;">CMPT 5</div>
+        <textarea class="cmptArea" data-k="${type}-cmpt5" placeholder="TEXT">${cmpt5Raw}</textarea>
       </div>
 
       <div class="rowGridTDBB">
@@ -3300,8 +3362,23 @@
     `;
 
     const airlineSelect = d.querySelector(`select[data-k="${type}-AIRLINE"]`);
-    airlineSelect?.addEventListener("change", ()=> updateAirlineFields(type, d));
+    airlineSelect?.addEventListener("change", ()=>{
+      const selectedAirline = airlineSelect.value || "7C";
+      updateAirlineFields(type, d);
+      syncAirlineSelection(type, selectedAirline);
+    });
     updateAirlineFields(type, d);
+    airlineSelect.disabled = false;
+
+    const cmpt1Input = d.querySelector(`textarea[data-k="${type}-cmpt1"]`);
+    cmpt1Input?.addEventListener("input", ()=>{
+      const prefix = cmpt1Input.dataset.fixedPrefix || "";
+      if(prefix && !String(cmpt1Input.value || "").toUpperCase().startsWith(prefix)){
+        const remainder = String(cmpt1Input.value || "").replace(/^FAK3?/i, "");
+        cmpt1Input.value = prefix + remainder;
+        try{ cmpt1Input.setSelectionRange(cmpt1Input.value.length, cmpt1Input.value.length); }catch(_e){}
+      }
+    });
 
     const timeBtn = d.querySelector(`[data-timebtn="${type}"]`);
     const timeShown = d.querySelector(`#${type}-TIMESHOWN`);
@@ -3364,12 +3441,16 @@
     sections.innerHTML = "";
     if(pickInbound.checked) sections.appendChild(makeSection("INBOUND", null));
     if(pickOutbound.checked) sections.appendChild(makeSection("OUTBOUND", null));
+    const master = sections.querySelector('select[data-k="INBOUND-AIRLINE"]') || sections.querySelector('select[data-k="OUTBOUND-AIRLINE"]');
+    if(master) syncAirlineSelection(master.dataset.k.startsWith("INBOUND") ? "INBOUND" : "OUTBOUND", master.value || "7C");
   }
 
   function rebuildSectionsFromMemo(memoData){
     sections.innerHTML = "";
     if(pickInbound.checked) sections.appendChild(makeSection("INBOUND", memoData));
     if(pickOutbound.checked) sections.appendChild(makeSection("OUTBOUND", memoData));
+    const master = sections.querySelector('select[data-k="INBOUND-AIRLINE"]') || sections.querySelector('select[data-k="OUTBOUND-AIRLINE"]');
+    if(master) syncAirlineSelection(master.dataset.k.startsWith("INBOUND") ? "INBOUND" : "OUTBOUND", master.value || "7C");
   }
 
   function newMemo(){
@@ -3484,6 +3565,7 @@
         data[type+"-cmpt2"] = "";
         data[type+"-cmpt3"] = "";
         data[type+"-cmpt4"] = "";
+        data[type+"-cmpt5"] = "";
         data[type+"-note"] = "";
         data[type+"-TIME"] = "";
         data[type+"-EXTRAS"] = [];
@@ -3513,6 +3595,11 @@
       data[type+"-cmpt2"] = buildStoredCmptValue(type, 2, root);
       data[type+"-cmpt3"] = buildStoredCmptValue(type, 3, root);
       data[type+"-cmpt4"] = buildStoredCmptValue(type, 4, root);
+      data[type+"-cmpt5"] = buildStoredCmptValue(type, 5, root);
+      if(airline === "IT"){
+        const cmpt1Text = String(data[type+"-cmpt1"] || "");
+        data[type+"-cmpt1"] = cmpt1Text.toUpperCase().startsWith("FAK3") ? cmpt1Text : "FAK3" + cmpt1Text;
+      }
       data[type+"-note"] = note ? (note.value || "") : "";
 
       const shown = document.getElementById(type+"-TIMESHOWN");
