@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>JAGOS VER.X</title>
+<title>JAGOS VER.Z</title>
 <meta name="application-name" content="JAGOS" />
 <meta name="apple-mobile-web-app-title" content="JAGOS" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -2219,6 +2219,53 @@
     opacity:1;
     cursor:not-allowed;
   }
+
+  /* ===== 항공사 선택에 따른 메모 작성창 전체 테마 ===== */
+  #sheet.airline-theme-7C{
+    --airline-sheet-bg:#101014;
+    --airline-section-bg:#19191f;
+    --airline-border:rgba(255,255,255,.12);
+    background:linear-gradient(180deg,#17171b,#08080b) !important;
+  }
+  #sheet.airline-theme-IT{
+    --airline-sheet-bg:#ffd928;
+    --airline-section-bg:#ffe86a;
+    --airline-border:rgba(90,70,0,.34);
+    background:linear-gradient(180deg,#ffe75c,#ffc914) !important;
+  }
+  #sheet.airline-theme-AK{
+    --airline-sheet-bg:#d90b2d;
+    --airline-section-bg:#ef2746;
+    --airline-border:rgba(255,255,255,.25);
+    background:linear-gradient(180deg,#ef2443,#a90020) !important;
+  }
+  #sheet.airline-theme-KN{
+    --airline-sheet-bg:#1266cf;
+    --airline-section-bg:#2f83ea;
+    --airline-border:rgba(255,255,255,.25);
+    background:linear-gradient(180deg,#3188ee,#0752b7) !important;
+  }
+  #sheet[class*="airline-theme-"]{
+    transition:background .18s ease,border-color .18s ease;
+  }
+  #sheet[class*="airline-theme-"] .section{
+    background:var(--airline-section-bg) !important;
+    border-color:var(--airline-border) !important;
+    transition:background .18s ease,border-color .18s ease;
+  }
+  #sheet[class*="airline-theme-"] .dragArea,
+  #sheet[class*="airline-theme-"] .modalTitleTap{
+    background:var(--airline-sheet-bg) !important;
+  }
+  #sheet.airline-theme-IT .sectionTitle,
+  #sheet.airline-theme-IT .lab,
+  #sheet.airline-theme-IT .staStdLab,
+  #sheet.airline-theme-IT .dateLab,
+  #sheet.airline-theme-IT .extraTitle,
+  #sheet.airline-theme-IT .modalTitleTap{
+    color:#171200 !important;
+  }
+  #sheet .fixedFlightNumber{opacity:1;cursor:default;}
 </style>
 </head>
 
@@ -2227,7 +2274,7 @@
 <header id="homeHeader" onclick="openPhoto()" ondblclick="openPhoto()">
   <div class="titleWrap">
     <div class="titleMain">JAGOS</div>
-    <div class="titleVer">VER.X</div>
+    <div class="titleVer">VER.Z</div>
     <button type="button" class="scheduleIconBtn" onclick="event.stopPropagation(); openSchedule();" title="SCHEDULE">📅</button>
   </div>
 </header>
@@ -3180,10 +3227,40 @@
 
   const AIRLINE_CONFIG = {
     "7C": { regPrefix:"HL", regDigits:4, regMode:"numeric", regPlaceholder:"0000", cmpts:[1,2,3,4] },
-    "IT": { regPrefix:"B5", regDigits:3, regMode:"numeric", regPlaceholder:"000", cmpts:[1,3,4,5], fixedCmpt1:"FAK3" },
+    "IT": { regPrefix:"B50", regDigits:3, regMode:"numeric", regPlaceholder:"000", cmpts:[1,3,4,5], fixedCmpt1:"FAK3" },
     "AK": { regPrefix:"9M", regDigits:3, regMode:"alpha", regPlaceholder:"ABC", cmpts:[1,3,4,5] },
     "KN": { regPrefix:"B1", regDigits:3, regMode:"numeric", regPlaceholder:"000", cmpts:[1,2,3,4] }
   };
+
+  const FIXED_FLIGHT_NUMBERS = {
+    IT:{ INBOUND:"602", OUTBOUND:"603" },
+    KN:{ INBOUND:"869", OUTBOUND:"870" },
+    AK:{ INBOUND:"1623", OUTBOUND:"1624" }
+  };
+
+  function applyAirlineFlightNumber(type, section, airline){
+    const flightInput = section?.querySelector(`input[data-k="${type}-7C"]`);
+    if(!flightInput) return;
+    const fixed = FIXED_FLIGHT_NUMBERS[airline]?.[type] || "";
+    if(fixed){
+      flightInput.value = fixed;
+      flightInput.readOnly = true;
+      flightInput.classList.add("fixedFlightNumber");
+    }else{
+      flightInput.readOnly = false;
+      flightInput.classList.remove("fixedFlightNumber");
+    }
+  }
+
+  function applyMemoEditorAirlineTheme(airline){
+    const targetSheet = document.getElementById("sheet");
+    if(!targetSheet) return;
+    const code = ["7C","IT","AK","KN"].includes(String(airline || "").toUpperCase())
+      ? String(airline).toUpperCase()
+      : "7C";
+    targetSheet.classList.remove("airline-theme-7C","airline-theme-IT","airline-theme-AK","airline-theme-KN");
+    targetSheet.classList.add(`airline-theme-${code}`);
+  }
 
   function getMemoAirline(memoData, type){
     return String(memoData?.[type+"-AIRLINE"] || "7C").toUpperCase();
@@ -3213,6 +3290,8 @@
     const regPrefix = section.querySelector(`[data-reg-prefix="${type}"]`);
     const airline = select?.value || "7C";
     const cfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
+    applyAirlineFlightNumber(type, section, airline);
+    applyMemoEditorAirlineTheme(airline);
     if(regPrefix) regPrefix.textContent = cfg.regPrefix;
     if(regInput){
       regInput.maxLength = cfg.regDigits;
@@ -3258,7 +3337,8 @@
 
     const savedTime = memoData ? (memoData[type+"-TIME"] || "") : "";
     const airline = getMemoAirline(memoData, type);
-    const localFlight = memoData ? (memoData[type+"-7C"] || "") : "";
+    const savedFlight = memoData ? (memoData[type+"-7C"] || "") : "";
+    const localFlight = FIXED_FLIGHT_NUMBERS[airline]?.[type] || savedFlight;
     const localReg = getMemoRegistration(memoData, type, airline);
     const regCfg = AIRLINE_CONFIG[airline] || AIRLINE_CONFIG["7C"];
     const sharedHASH = memoData ? (memoData.sharedHASH || "") : "";
@@ -3690,13 +3770,13 @@
     const type = m.hasIn !== false ? "INBOUND" : "OUTBOUND";
     const x = getDisplayIdentity(m, type);
     const hash = String(m.sharedHASH || "").trim();
-    return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}]#[${hash}]`;
+    return `${x.airline}${x.flight} ${x.regPrefix}${x.reg}#${hash}`;
   }
 
   function formatSplitLine(m, type){
     const x = getDisplayIdentity(m, type);
     const hash = String(m.sharedHASH || "").trim();
-    if(type === "INBOUND") return `${x.airline}[${x.flight}] ${x.regPrefix}[${x.reg}]`;
+    if(type === "INBOUND") return `${x.airline}${x.flight} ${x.regPrefix}${x.reg}`;
     return `${x.airline}[${x.flight}]#[${hash}]`;
   }
 
