@@ -830,6 +830,49 @@
     border:1px solid rgba(255,255,255,.05);
   }
 
+
+
+  .itOperationTimer{
+    display:none;
+    background:#fff3a6;
+    border:2px solid rgba(90,70,0,.34);
+    border-radius:calc(24px * var(--ui));
+    padding:calc(14px * var(--ui));
+    margin:calc(12px * var(--ui)) 0;
+    color:#201900;
+  }
+  .itOperationTimer.active{display:block;}
+  .itTimerTitle{
+    font-size:calc(20px * var(--ui));
+    font-weight:1000;
+    margin-bottom:calc(10px * var(--ui));
+    text-align:center;
+  }
+  .itTimerRow{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:calc(8px * var(--ui));
+    align-items:center;
+    padding:calc(6px * var(--ui)) 0;
+    border-bottom:1px solid rgba(90,70,0,.18);
+  }
+  .itTimerRow:last-child{border-bottom:0;}
+  .itTimerLabel{
+    font-size:calc(13px * var(--ui));
+    line-height:1.25;
+    font-weight:900;
+  }
+  .itTimerRow .timeWrap{
+    gap:calc(6px * var(--ui));
+  }
+  .itTimerRow .timeBtn{
+    color:#201900;
+  }
+  .itTimerRow .timeVal{
+    color:#b45309;
+    min-width:calc(62px * var(--ui));
+  }
+
   .sectionHead{
     display:flex;
     align-items:flex-start;
@@ -3353,6 +3396,62 @@
     }
   }
 
+
+
+  const IT_OPERATION_TIMERS = [
+    { key:"rampTeam", label:"RAMP TEAM AT PLANESIDE (-60) 스팟 도착" },
+    { key:"cargo", label:"CARGO AT PLANESIDE (-60) 카고 도착" },
+    { key:"loadingCommence", label:"LOADING COMMENCE 탑재 시작" },
+    { key:"firstBag", label:"1ST BAG PLANESIDE 1차BAG 도착" },
+    { key:"finalBag", label:"FINAL BAG AT PLANESIDE 2차BAG 도착" },
+    { key:"loadingFinished", label:"LOADING FINISHED 탑재 완료" },
+    { key:"refuelTruck", label:"REFUELING TRUCK AT PLANESIDE 급유 도착" },
+    { key:"refuelCommence", label:"REFUELING COMMENCE 급유 시작" },
+    { key:"refuelFinished", label:"REFUELING FINISHED 급유 완료" }
+  ];
+
+  function nowTimeDigits(){
+    const d = new Date();
+    return String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function makeItOperationTimer(memoData){
+    const box = document.createElement("div");
+    box.className = "itOperationTimer";
+    box.id = "IT-OPERATION-TIMER";
+    const saved = memoData?.IT_OPERATION_TIMERS || {};
+    box.innerHTML = `
+      <div class="itTimerTitle">IT OPERATION TIMER</div>
+      <div class="itTimerRows">
+        ${IT_OPERATION_TIMERS.map(item => `
+          <div class="itTimerRow">
+            <div class="itTimerLabel">${item.label}</div>
+            <div class="timeWrap">
+              <button type="button" class="timeBtn" data-it-timebtn="${item.key}">TIME</button>
+              <div class="timeVal" data-it-time="${item.key}"></div>
+            </div>
+          </div>
+        `).join("")}
+      </div>`;
+
+    IT_OPERATION_TIMERS.forEach(item=>{
+      const btn = box.querySelector(`[data-it-timebtn="${item.key}"]`);
+      const shown = box.querySelector(`[data-it-time="${item.key}"]`);
+      bindEditableTime(shown, normalizeTimeText(saved[item.key] || ""));
+      btn?.addEventListener("click", ()=>{
+        shown.textContent = nowTime();
+      });
+    });
+    return box;
+  }
+
+  function updateItOperationTimerVisibility(){
+    const box = document.getElementById("IT-OPERATION-TIMER");
+    if(!box) return;
+    const airline = sections.querySelector('select[data-k$="-AIRLINE"]')?.value || "7C";
+    box.classList.toggle("active", airline === "IT");
+  }
+
   function makeSection(type, memoData){
     const d = document.createElement("div");
     d.className = "section";
@@ -3504,6 +3603,7 @@
       const selectedAirline = airlineSelect.value || "7C";
       updateAirlineFields(type, d);
       syncAirlineSelection(type, selectedAirline);
+      updateItOperationTimerVisibility();
     });
     updateAirlineFields(type, d);
     airlineSelect.disabled = false;
@@ -3588,17 +3688,21 @@
   function buildSectionsBlank(){
     sections.innerHTML = "";
     if(pickInbound.checked) sections.appendChild(makeSection("INBOUND", null));
+    sections.appendChild(makeItOperationTimer(null));
     if(pickOutbound.checked) sections.appendChild(makeSection("OUTBOUND", null));
     const master = sections.querySelector('select[data-k="INBOUND-AIRLINE"]') || sections.querySelector('select[data-k="OUTBOUND-AIRLINE"]');
     if(master) syncAirlineSelection(master.dataset.k.startsWith("INBOUND") ? "INBOUND" : "OUTBOUND", master.value || "7C");
+    updateItOperationTimerVisibility();
   }
 
   function rebuildSectionsFromMemo(memoData){
     sections.innerHTML = "";
     if(pickInbound.checked) sections.appendChild(makeSection("INBOUND", memoData));
+    sections.appendChild(makeItOperationTimer(memoData));
     if(pickOutbound.checked) sections.appendChild(makeSection("OUTBOUND", memoData));
     const master = sections.querySelector('select[data-k="INBOUND-AIRLINE"]') || sections.querySelector('select[data-k="OUTBOUND-AIRLINE"]');
     if(master) syncAirlineSelection(master.dataset.k.startsWith("INBOUND") ? "INBOUND" : "OUTBOUND", master.value || "7C");
+    updateItOperationTimerVisibility();
   }
 
   function newMemo(){
@@ -3687,6 +3791,12 @@
     data.author = savedAuthor;
     data.memoDate = memoDate.value || getViewingDayKey();
     data.dayKey = data.memoDate;
+
+    data.IT_OPERATION_TIMERS = {};
+    IT_OPERATION_TIMERS.forEach(item=>{
+      const shown = document.querySelector(`[data-it-time="${item.key}"]`);
+      data.IT_OPERATION_TIMERS[item.key] = normalizeTimeText(shown?.textContent || "");
+    });
 
     const first7CReg = [...document.querySelectorAll('.section')].map(root=>({
       airline: root.querySelector('select[data-k$="-AIRLINE"]')?.value || "7C",
@@ -3817,7 +3927,39 @@
   function formatSplitLine(m, type){
     const x = getDisplayIdentity(m, type);
     const hash = getDisplayHash(m, type);
-    return `${x.airline}${x.flight} ${x.regPrefix} ${x.reg} #${hash}`.replace(/\s+/g, " ").trim();
+    const flightText = `${x.airline}${x.flight}`.trim();
+
+    const hasBoth = m.hasIn !== false && m.hasOut !== false;
+    const inX = hasBoth ? getDisplayIdentity(m, "INBOUND") : null;
+    const outX = hasBoth ? getDisplayIdentity(m, "OUTBOUND") : null;
+    const inHash = hasBoth ? getDisplayHash(m, "INBOUND") : "";
+    const outHash = hasBoth ? getDisplayHash(m, "OUTBOUND") : "";
+
+    // 7C / IT / AK / KN 공통 조건부 표시
+    // 기번과 #이 모두 같을 때:
+    //   IN  = 편명 + 기번
+    //   OUT = 편명 + #
+    // 기번 또는 #이 다를 때:
+    //   IN/OUT 각각 편명 + 해당 기번 + 해당 # 전부 표시
+    // 항공사 구분 없이 실제 표시 기번 전체(HL/B50/9M/B1 + 값)와 #을 비교한다.
+    // 따라서 7C, IT, AK, KN 모두 동일한 규칙으로 표시된다.
+    const inFullReg = `${inX?.regPrefix || ""}${inX?.reg || ""}`.trim().toUpperCase();
+    const outFullReg = `${outX?.regPrefix || ""}${outX?.reg || ""}`.trim().toUpperCase();
+    const normalizedInHash = String(inHash || "").trim();
+    const normalizedOutHash = String(outHash || "").trim();
+
+    const sameRegAndHash = hasBoth &&
+      inFullReg === outFullReg &&
+      normalizedInHash === normalizedOutHash;
+
+    if(sameRegAndHash){
+      if(type === "INBOUND"){
+        return `${flightText} ${x.regPrefix}${x.reg}`.replace(/\s+/g, " ").trim();
+      }
+      return `${flightText} #${hash}`.replace(/\s+/g, " ").trim();
+    }
+
+    return `${flightText} ${x.regPrefix}${x.reg} #${hash}`.replace(/\s+/g, " ").trim();
   }
 
   function getCardAirline(m){
