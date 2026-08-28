@@ -864,6 +864,29 @@
     letter-spacing:.6px;
   }
 
+  /* Airline selector: keep 7C/IT/AK/KN fully visible on iPhone */
+  .carrierSelect{
+    width:100%;
+    min-width:0;
+    padding:0 calc(6px * var(--ui));
+    text-align:center;
+    text-align-last:center;
+    font-weight:1000;
+    letter-spacing:0;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .carrierSelect.carrier-7C{color:#ff7a00!important;border-color:rgba(255,122,0,.75)!important;}
+  .carrierSelect.carrier-IT{color:#ffd21f!important;border-color:rgba(255,210,31,.78)!important;}
+  .carrierSelect.carrier-AK{color:#ff3953!important;border-color:rgba(255,57,83,.78)!important;}
+  .carrierSelect.carrier-KN{color:#59a8ff!important;border-color:rgba(89,168,255,.78)!important;}
+  .regPrefixLab{
+    min-width:0;
+    text-align:center;
+    white-space:nowrap;
+    font-size:calc(15px * var(--ui));
+  }
+
   .long{
     flex:1;
     min-width:0;
@@ -1167,9 +1190,9 @@
   .rowGrid3{
     display:grid;
     grid-template-columns:
-      calc(26px * var(--ui)) .9fr
-      calc(26px * var(--ui)) .9fr
-      calc(14px * var(--ui)) .9fr;
+      calc(54px * var(--ui)) .85fr
+      calc(44px * var(--ui)) .9fr
+      calc(14px * var(--ui)) .85fr;
     gap:calc(10px * var(--ui));
     align-items:center;
     margin:calc(10px * var(--ui)) 0;
@@ -3040,11 +3063,19 @@
     return CARRIER_REG_PREFIX[normalizeCarrier(carrier)] || "HL";
   }
 
+  function applyCarrierSelectVisual(sel){
+    if(!sel) return;
+    sel.classList.remove("carrier-7C","carrier-IT","carrier-AK","carrier-KN");
+    sel.classList.add(`carrier-${normalizeCarrier(sel.value)}`);
+  }
+
   function syncCarrierRegLabels(){
     ["INBOUND","OUTBOUND"].forEach(type=>{
-      const carrier = sections.querySelector(`[data-k="${type}-CARRIER"]`)?.value || "7C";
+      const carrierEl = sections.querySelector(`[data-k="${type}-CARRIER"]`);
+      const carrier = carrierEl?.value || "7C";
       const lab = sections.querySelector(`[data-reg-label="${type}"]`);
       if(lab) lab.textContent = getRegPrefix(carrier);
+      applyCarrierSelectVisual(carrierEl);
     });
   }
 
@@ -3090,9 +3121,9 @@
       </div>
 
       <div class="rowGrid3">
-        <select class="numBox" data-k="${type}-CARRIER" aria-label="AIRLINE">${carrierOptions(carrier)}</select>
+        <select class="numBox carrierSelect carrier-${carrier}" data-k="${type}-CARRIER" aria-label="AIRLINE">${carrierOptions(carrier)}</select>
         <input class="numBox" inputmode="numeric" maxlength="4" placeholder="0000" data-k="${type}-7C" value="${local7C}">
-        <div class="lab" data-reg-label="${type}">${getRegPrefix(carrier)}</div>
+        <div class="lab regPrefixLab" data-reg-label="${type}">${getRegPrefix(carrier)}</div>
         <input class="numBox" maxlength="6" placeholder="REG" data-k="${type}-REG" value="${localReg}">
         <div class="lab">#</div>
         <input class="numBox" inputmode="numeric" maxlength="3" placeholder="000" data-k="SHARED-HASH" value="${sharedHASH}">
@@ -3193,7 +3224,9 @@
     const carrierSel = d.querySelector(`[data-k="${type}-CARRIER"]`);
     const regInput = d.querySelector(`[data-k="${type}-REG"]`);
     if(carrierSel){
+      applyCarrierSelectVisual(carrierSel);
       carrierSel.addEventListener("change", ()=>{
+        applyCarrierSelectVisual(carrierSel);
         const lab = d.querySelector(`[data-reg-label="${type}"]`);
         if(lab) lab.textContent = getRegPrefix(carrierSel.value);
         // INBOUND 변경 시 OUTBOUND가 아직 같은 값이면 기본값도 같이 따라간다.
