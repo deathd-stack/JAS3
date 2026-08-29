@@ -2103,6 +2103,35 @@
 }
 </style>
 
+
+<style>
+/* CARRIER TAG PILL COLORS */
+.tagPill.carrierTag-7C {
+  background:linear-gradient(180deg,#ff8b2b,#ff6200) !important;
+  color:#fff !important;
+  border-color:rgba(255,122,0,.85) !important;
+  box-shadow:0 12px 18px rgba(255,98,0,.22) !important;
+}
+.tagPill.carrierTag-IT {
+  background:linear-gradient(180deg,#ffe063,#ffc61a) !important;
+  color:#111 !important;
+  border-color:rgba(255,210,31,.9) !important;
+  box-shadow:0 12px 18px rgba(255,198,26,.20) !important;
+}
+.tagPill.carrierTag-AK {
+  background:linear-gradient(180deg,#ff3953,#d80024) !important;
+  color:#fff !important;
+  border-color:rgba(255,57,83,.9) !important;
+  box-shadow:0 12px 18px rgba(216,0,36,.20) !important;
+}
+.tagPill.carrierTag-KN {
+  background:linear-gradient(180deg,#59a8ff,#2477d4) !important;
+  color:#fff !important;
+  border-color:rgba(89,168,255,.9) !important;
+  box-shadow:0 12px 18px rgba(36,119,212,.20) !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -3055,6 +3084,24 @@
   }
 
   const CARRIER_REG_PREFIX = { "7C":"HL", "IT":"B50", "AK":"9M", "KN":"B1" };
+  const CARRIER_FIXED_FLIGHTS = {
+    "IT": { INBOUND:"602", OUTBOUND:"603" },
+    "AK": { INBOUND:"1623", OUTBOUND:"1624" },
+    "KN": { INBOUND:"869", OUTBOUND:"870" }
+  };
+
+  function applyFixedFlight(type, carrier, root = sections){
+    const c = normalizeCarrier(carrier);
+    const input = root.querySelector(`[data-k="${type}-7C"]`);
+    if(!input) return;
+    const fixed = CARRIER_FIXED_FLIGHTS[c]?.[type];
+    if(fixed){
+      input.value = fixed;
+      input.readOnly = true;
+    }else{
+      input.readOnly = false;
+    }
+  }
 
   function normalizeCarrier(v){
     const c = String(v || "7C").toUpperCase();
@@ -3087,6 +3134,7 @@
       const lab = sections.querySelector(`[data-reg-label="${type}"]`);
       if(lab) lab.textContent = getRegPrefix(carrier);
       applyCarrierSelectVisual(carrierEl);
+      applyFixedFlight(type, carrier, sections);
     });
   }
 
@@ -3236,17 +3284,19 @@
     const regInput = d.querySelector(`[data-k="${type}-REG"]`);
     if(carrierSel){
       applyCarrierSelectVisual(carrierSel);
+      applyFixedFlight(type, carrierSel.value, d); // INITIAL FIXED FLIGHT
       carrierSel.addEventListener("change", ()=>{
         applyCarrierSelectVisual(carrierSel);
         const lab = d.querySelector(`[data-reg-label="${type}"]`);
         if(lab) lab.textContent = getRegPrefix(carrierSel.value);
-        // INBOUND 변경 시 OUTBOUND가 아직 같은 값이면 기본값도 같이 따라간다.
+        applyFixedFlight(type, carrierSel.value, d);
         if(type === "INBOUND"){
           const outCarrier = sections.querySelector('[data-k="OUTBOUND-CARRIER"]');
           const outReg = sections.querySelector('[data-k="OUTBOUND-REG"]');
           if(outCarrier && outReg && !outReg.dataset.overridden){
             outCarrier.value = carrierSel.value;
             outReg.value = regInput?.value || "";
+            applyFixedFlight("OUTBOUND", outCarrier.value, sections);
             syncCarrierRegLabels();
           }
         }
@@ -3438,8 +3488,9 @@
       const gi = (k)=> root.querySelector(`[data-k="${type}-${k}"]`);
       const note = root.querySelector(`textarea[data-k="${type}-note"]`);
 
-      data[type+"-7C"] = pad(gi("7C")?.value || "", 4);
       data[type+"-CARRIER"] = normalizeCarrier(gi("CARRIER")?.value || "7C");
+      const rawFlight = String(gi("7C")?.value || "").replace(/[^0-9]/g, "");
+      data[type+"-7C"] = data[type+"-CARRIER"] === "7C" ? pad(rawFlight, 4) : rawFlight;
       data[type+"-REG"] = normalizeRegSuffix(gi("REG")?.value || "");
       data[type+"-STA"] = type==="INBOUND" ? pad(gi("STA")?.value, 4) : "";
       data[type+"-STD"] = type==="OUTBOUND" ? pad(gi("STD")?.value, 4) : "";
@@ -3498,6 +3549,10 @@
     }
   }
 
+  function carrierTagClass(m, type){
+    return `carrierTag-${normalizeCarrier(m[type+"-CARRIER"] || "7C")}`;
+  }
+
   function formatCombinedLine(m){
     const type = m.hasIn !== false ? "INBOUND" : "OUTBOUND";
     const carrier = normalizeCarrier(m[type+"-CARRIER"] || "7C");
@@ -3541,13 +3596,13 @@
 
       if(hasIn && hasOut){
         linesHtml = `
-          <div class="line"><div class="tagPill">IN</div><div class="textPill">${formatSplitLine(m, "INBOUND")}</div></div>
-          <div class="line"><div class="tagPill">OUT</div><div class="textPill">${formatSplitLine(m, "OUTBOUND")}</div></div>
+          <div class="line"><div class="tagPill ${carrierTagClass(m, "INBOUND")}">IN</div><div class="textPill">${formatSplitLine(m, "INBOUND")}</div></div>
+          <div class="line"><div class="tagPill ${carrierTagClass(m, "OUTBOUND")}">OUT</div><div class="textPill">${formatSplitLine(m, "OUTBOUND")}</div></div>
         `;
       }else{
         const singleTag = hasIn ? "IN" : "OUT";
         linesHtml = `
-          <div class="line"><div class="tagPill">${singleTag}</div><div class="textPill">${formatCombinedLine(m)}</div></div>
+          <div class="line"><div class="tagPill ${carrierTagClass(m, hasIn ? "INBOUND" : "OUTBOUND")}">${singleTag}</div><div class="textPill">${formatCombinedLine(m)}</div></div>
         `;
       }
 
