@@ -2130,6 +2130,40 @@
   border-color:rgba(89,168,255,.9) !important;
   box-shadow:0 12px 18px rgba(36,119,212,.20) !important;
 }
+
+
+/* ===== 7C LIVE FLIGHT BOARD TEST ===== */
+.flightLiveBtn{width:100%;min-height:calc(54px * var(--ui))!important;color:#ffb347!important;letter-spacing:.4px;}
+.flightBoardModal{position:fixed;inset:0;z-index:180;display:none;background:rgba(0,0,0,.72);align-items:flex-end;justify-content:center;padding:0;}
+.flightBoardModal.show{display:flex;}
+.flightBoardBox{width:100%;max-width:760px;max-height:94vh;overflow:auto;background:#111216;border-radius:28px 28px 0 0;padding:14px;box-shadow:0 -18px 45px rgba(0,0,0,.40);border:1px solid rgba(255,145,70,.25);}
+.flightBoardTop{position:sticky;top:0;z-index:2;background:#111216;padding:3px 0 12px;}
+.flightBoardHead{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.flightBoardTitle{font-size:22px;font-weight:1000;color:#fff;}
+.flightBoardSub{font-size:12px;color:#b9bac2;margin-top:4px;}
+.flightBoardClose{padding:10px 15px!important;box-shadow:none!important;}
+.flightApiPanel{margin-top:12px;padding:12px;border-radius:20px;background:#191a1f;border:1px solid rgba(255,255,255,.06);}
+.flightApiPanel label{display:block;font-size:12px;color:#ffb347;margin-bottom:6px;}
+.flightApiKey{height:44px!important;text-align:left!important;font-size:13px!important;text-transform:none!important;}
+.flightBoardActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.flightBoardActions button{min-height:46px!important;padding:10px!important;font-size:14px!important;}
+.flightBoardAssign{display:grid;grid-template-columns:110px 1fr;gap:8px;margin:12px 0;}
+.flightBoardAssign select,.flightBoardAssign button{height:48px!important;}
+.flightBoardStatus{min-height:22px;font-size:13px;color:#d5d5da;margin:8px 2px;}
+.flightBoardList{display:flex;flex-direction:column;gap:9px;padding-bottom:18px;}
+.flightItem{display:grid;grid-template-columns:32px 1fr;gap:10px;padding:12px;border-radius:20px;background:linear-gradient(180deg,#191a1f,#121317);border:1px solid rgba(255,145,70,.16);}
+.flightCheck{width:25px!important;height:25px!important;margin-top:4px;accent-color:#ff6a00;}
+.flightLine1{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.flightDir{display:inline-flex;min-width:44px;justify-content:center;border-radius:999px;padding:5px 8px;font-size:11px;background:#ff6a00;color:white;}
+.flightDir.out{background:#2c7be5;}
+.flightNo{font-size:18px;font-weight:1000;color:#fff;}
+.flightTime{font-size:17px;font-weight:1000;color:#ffb347;font-variant-numeric:tabular-nums;}
+.flightDelay{font-size:12px;color:#ff8080;}
+.flightMeta{margin-top:5px;font-size:12px;line-height:1.5;color:#c0c1c8;}
+.flightRemark{color:#fff;font-weight:900;}
+.flightEmpty{padding:22px;text-align:center;border-radius:18px;background:#191a1f;color:#b9bac2;}
+@media(max-width:520px){.flightBoardBox{border-radius:24px 24px 0 0;padding:12px}.flightBoardTitle{font-size:19px}.flightBoardAssign{grid-template-columns:92px 1fr}.flightNo{font-size:17px}.flightTime{font-size:16px}}
+
 </style>
 
 </head>
@@ -2207,6 +2241,10 @@
       <input id="authorNameInput" class="authorControlInput" maxlength="12" placeholder="YOUR NAME">
     </div>
   </div>
+
+  <div class="controlsRow">
+    <button type="button" class="flightLiveBtn" onclick="openFlightBoard()">✈ 7C LIVE / TEAM ASSIGN</button>
+  </div>
 </div>
 
 <div class="dayBar">
@@ -2218,6 +2256,35 @@
 </div>
 
 <div id="memoList"></div>
+
+<div class="flightBoardModal" id="flightBoardModal" aria-hidden="true">
+  <div class="flightBoardBox">
+    <div class="flightBoardTop">
+      <div class="flightBoardHead">
+        <div>
+          <div class="flightBoardTitle">7C TODAY LIVE</div>
+          <div class="flightBoardSub">ICN 당일 도착/출발 · 공공데이터 테스트</div>
+        </div>
+        <button type="button" class="flightBoardClose" onclick="closeFlightBoard()">CLOSE</button>
+      </div>
+      <div class="flightApiPanel">
+        <label>공공데이터포털 SERVICE KEY (테스트용 · 이 기기에만 저장)</label>
+        <input id="flightApiKey" class="flightApiKey" autocomplete="off" placeholder="API 인증키 붙여넣기">
+        <div class="flightBoardActions">
+          <button type="button" onclick="load7CFlights()">REFRESH 7C</button>
+          <button type="button" onclick="selectAll7CFlights()">SELECT ALL</button>
+        </div>
+      </div>
+      <div class="flightBoardAssign">
+        <select id="flightBoardTeamSelect"></select>
+        <button type="button" onclick="assignSelected7CFlights()">선택편 TEAM 등록</button>
+      </div>
+      <div class="flightBoardStatus" id="flightBoardStatus">API 키를 넣고 REFRESH 7C를 눌러줘.</div>
+    </div>
+    <div class="flightBoardList" id="flightBoardList"></div>
+  </div>
+</div>
+
 
 <div class="bottomLeftButtons">
   <button class="equipBtn" type="button" onclick="openEquip()">EQUIPMENT</button>
@@ -4232,6 +4299,226 @@
   }
 
 
+  // ===== 7C LIVE FLIGHT BOARD TEST =====
+  const FLIGHT_API_KEY_STORAGE = "jagos_icn_openapi_key_v1";
+  const FLIGHT_API_BASE = "https://apis.data.go.kr/B551177/StatusOfPassengerFlightsOdp";
+  const flightBoardModal = document.getElementById("flightBoardModal");
+  const flightBoardList = document.getElementById("flightBoardList");
+  const flightBoardStatus = document.getElementById("flightBoardStatus");
+  const flightApiKeyInput = document.getElementById("flightApiKey");
+  const flightBoardTeamSelect = document.getElementById("flightBoardTeamSelect");
+  let flightBoardFlights = [];
+
+  function flightEsc(v){
+    return String(v ?? "").replace(/[<>&\"]/g, ch => ({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[ch]));
+  }
+
+  function openFlightBoard(){
+    if(!flightBoardModal) return;
+    const savedKey = localStorage.getItem(FLIGHT_API_KEY_STORAGE) || "";
+    if(flightApiKeyInput && !flightApiKeyInput.value) flightApiKeyInput.value = savedKey;
+    const team = getActiveTeamValue();
+    if(flightBoardTeamSelect){
+      const assignTeams = TEAM_VALUES.filter(v => v !== "ALL");
+      flightBoardTeamSelect.innerHTML = assignTeams.map(v => `<option value="${v}">${v}조</option>`).join("");
+      const preferred = team !== "ALL" ? team : (mainTeam || "1");
+      flightBoardTeamSelect.value = assignTeams.includes(preferred) ? preferred : "1";
+    }
+    flightBoardModal.classList.add("show");
+    flightBoardModal.setAttribute("aria-hidden","false");
+  }
+
+  function closeFlightBoard(){
+    if(!flightBoardModal) return;
+    flightBoardModal.classList.remove("show");
+    flightBoardModal.setAttribute("aria-hidden","true");
+  }
+
+  function flightApiKeyValue(){
+    return String(flightApiKeyInput?.value || "").trim();
+  }
+
+  function buildFlightApiUrl(endpoint, key){
+    // data.go.kr에서 'Encoding' 키를 복사한 경우 % 문자를 다시 인코딩하지 않는다.
+    const serviceKey = key.includes("%") ? key : encodeURIComponent(key);
+    return `${FLIGHT_API_BASE}/${endpoint}?serviceKey=${serviceKey}&from_time=0000&to_time=2400&airline=7C&lang=K&type=json`;
+  }
+
+  function extractFlightItems(payload){
+    const candidates = [
+      payload?.response?.body?.items?.item,
+      payload?.response?.body?.items,
+      payload?.body?.items?.item,
+      payload?.body?.items,
+      payload?.items?.item,
+      payload?.items
+    ];
+    for(const v of candidates){
+      if(Array.isArray(v)) return v;
+      if(v && typeof v === "object" && (v.flightId || v.scheduleDateTime)) return [v];
+    }
+    return [];
+  }
+
+  function hhmmMinutes(v){
+    const t=String(v||"").replace(/\D/g,"").padStart(4,"0").slice(-4);
+    const h=Number(t.slice(0,2)), m=Number(t.slice(2));
+    return Number.isFinite(h)&&Number.isFinite(m) ? h*60+m : null;
+  }
+
+  function flightDelayText(scheduled, estimated){
+    if(!scheduled || !estimated || scheduled===estimated) return "";
+    const a=hhmmMinutes(scheduled), b=hhmmMinutes(estimated);
+    if(a==null || b==null) return "";
+    let d=b-a;
+    if(d < -720) d += 1440;
+    if(d > 720) d -= 1440;
+    if(!d) return "";
+    return `${d>0?"+":""}${d}분`;
+  }
+
+  function normalizeFlightResult(item, direction){
+    return {
+      direction,
+      flightId:String(item?.flightId || item?.masterflightid || "").toUpperCase().replace(/\s+/g,""),
+      schedule:String(item?.scheduleDateTime || "").replace(/\D/g,"").slice(-4),
+      estimated:String(item?.estimatedDateTime || "").replace(/\D/g,"").slice(-4),
+      airport:String(item?.airportCode || item?.cityCode || item?.airport || ""),
+      gate:String(item?.gatenumber || ""),
+      carousel:String(item?.carousel || ""),
+      remark:String(item?.remark || ""),
+      terminal:String(item?.terminalId || "")
+    };
+  }
+
+  function render7CFlights(){
+    if(!flightBoardList) return;
+    if(!flightBoardFlights.length){
+      flightBoardList.innerHTML='<div class="flightEmpty">조회된 7C 편이 없어.</div>';
+      return;
+    }
+    flightBoardList.innerHTML = flightBoardFlights.map((f,i)=>{
+      const delay=flightDelayText(f.schedule,f.estimated);
+      const est=f.estimated || f.schedule || "----";
+      const route=f.airport ? flightEsc(f.airport) : "-";
+      const extra=f.direction==="INBOUND" ? `BAG ${flightEsc(f.carousel||"-")}` : `GATE ${flightEsc(f.gate||"-")}`;
+      return `<label class="flightItem">
+        <input type="checkbox" class="flightCheck" data-flight-idx="${i}">
+        <div>
+          <div class="flightLine1">
+            <span class="flightDir ${f.direction==='OUTBOUND'?'out':''}">${f.direction==='INBOUND'?'IN':'OUT'}</span>
+            <span class="flightNo">${flightEsc(f.flightId)}</span>
+            <span class="flightTime">${flightEsc(f.schedule||'----')} → ${flightEsc(est)}</span>
+            ${delay?`<span class="flightDelay">${flightEsc(delay)}</span>`:''}
+          </div>
+          <div class="flightMeta">${route} · GATE ${flightEsc(f.gate||'-')} · ${extra} · ${flightEsc(f.terminal||'-')} · <span class="flightRemark">${flightEsc(f.remark||'')}</span></div>
+        </div>
+      </label>`;
+    }).join("");
+  }
+
+  async function fetch7CDirection(endpoint, direction, key){
+    const res = await fetch(buildFlightApiUrl(endpoint,key), {cache:"no-store"});
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    let data;
+    try{ data=JSON.parse(text); }
+    catch(_){ throw new Error("API JSON 응답 아님: 인증키 또는 API 승인을 확인해줘."); }
+    const code=data?.response?.header?.resultCode ?? data?.header?.resultCode;
+    const msg=data?.response?.header?.resultMsg ?? data?.header?.resultMsg;
+    if(code && String(code)!=="00") throw new Error(`${code} ${msg||"API ERROR"}`);
+    return extractFlightItems(data)
+      .map(x=>normalizeFlightResult(x,direction))
+      .filter(x=>x.flightId.startsWith("7C"));
+  }
+
+  async function load7CFlights(){
+    const key=flightApiKeyValue();
+    if(!key){ alert("공공데이터포털 API 인증키를 먼저 넣어줘."); flightApiKeyInput?.focus(); return; }
+    localStorage.setItem(FLIGHT_API_KEY_STORAGE,key);
+    flightBoardStatus.textContent="7C 도착/출발편 조회 중...";
+    flightBoardList.innerHTML='<div class="flightEmpty">LOADING...</div>';
+    try{
+      const [arrivals,departures]=await Promise.all([
+        fetch7CDirection("getPassengerArrivalsOdp","INBOUND",key),
+        fetch7CDirection("getPassengerDeparturesOdp","OUTBOUND",key)
+      ]);
+      flightBoardFlights=[...arrivals,...departures].sort((a,b)=>String(a.schedule).localeCompare(String(b.schedule)) || a.flightId.localeCompare(b.flightId));
+      flightBoardStatus.textContent=`오늘 7C ${flightBoardFlights.length}편 · IN ${arrivals.length} / OUT ${departures.length} · ${new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})} 갱신`;
+      render7CFlights();
+    }catch(error){
+      console.error("7C LIVE LOAD FAIL",error);
+      flightBoardFlights=[];
+      flightBoardStatus.textContent=`조회 실패: ${error?.message || error}`;
+      flightBoardList.innerHTML='<div class="flightEmpty">API 키 승인/형식 또는 브라우저 네트워크 제한을 확인해줘.</div>';
+    }
+  }
+
+  function selectAll7CFlights(){
+    const checks=[...flightBoardList.querySelectorAll('.flightCheck')];
+    const shouldCheck=checks.some(c=>!c.checked);
+    checks.forEach(c=>c.checked=shouldCheck);
+  }
+
+  function blankFlightMemo(id, team, author, date, direction, f){
+    const data={id,createdAt:id,updatedAt:Date.now(),team,author,memoDate:date,dayKey:date,hasIn:direction==="INBOUND",hasOut:direction==="OUTBOUND",sharedHASH:"",sharedHL:""};
+    ["INBOUND","OUTBOUND"].forEach(type=>{
+      data[type+"-CARRIER"]="7C";
+      data[type+"-7C"]="";
+      data[type+"-REG"]="";
+      data[type+"-STA"]="";
+      data[type+"-STD"]="";
+      data[type+"-t"]=""; data[type+"-d"]=""; data[type+"-bb"]="";
+      data[type+"-tt"]=""; data[type+"-tb"]="";
+      data[type+"-cmpt1"]=""; data[type+"-cmpt2"]=""; data[type+"-cmpt3"]=""; data[type+"-cmpt4"]="";
+      data[type+"-note"]=""; data[type+"-TIME"]=""; data[type+"-EXTRAS"]=[]; data[type+"-LIRPHOTO"]="";
+    });
+    const no=String(f.flightId||"").replace(/^7C/i,"").replace(/\D/g,"");
+    data[direction+"-7C"]=pad(no,4);
+    if(direction==="INBOUND") data[direction+"-STA"]=pad(f.schedule,4);
+    else data[direction+"-STD"]=pad(f.schedule,4);
+    data[direction+"-LIVE_EST"]=f.estimated||"";
+    data[direction+"-LIVE_GATE"]=f.gate||"";
+    data[direction+"-LIVE_BAG"]=f.carousel||"";
+    data[direction+"-LIVE_STATUS"]=f.remark||"";
+    data[direction+"-LIVE_AIRPORT"]=f.airport||"";
+    return data;
+  }
+
+  async function assignSelected7CFlights(){
+    const selected=[...flightBoardList.querySelectorAll('.flightCheck:checked')]
+      .map(c=>flightBoardFlights[Number(c.dataset.flightIdx)]).filter(Boolean);
+    if(!selected.length){ alert("등록할 편을 체크해줘."); return; }
+    const team=String(flightBoardTeamSelect?.value || "").toUpperCase();
+    if(!team || team==="ALL"){ alert("TEAM을 선택해줘."); return; }
+    const savedAuthor=normalizeAuthorName(authorNameInput?.value || authorName);
+    if(!savedAuthor){ alert("메인 화면 NAME을 먼저 입력해줘."); return; }
+    saveAuthorName(savedAuthor);
+    const date=getViewingDayKey();
+    const existingKeys=new Set(memos.filter(m=>String(m.team||"").toUpperCase()===team && (m.dayKey||m.memoDate)===date).flatMap(m=>{
+      const keys=[];
+      if(m.hasIn!==false && m["INBOUND-7C"]) keys.push(`INBOUND:7C${String(m["INBOUND-7C"]).replace(/\D/g,'')}`);
+      if(m.hasOut!==false && m["OUTBOUND-7C"]) keys.push(`OUTBOUND:7C${String(m["OUTBOUND-7C"]).replace(/\D/g,'')}`);
+      return keys;
+    }));
+    const fresh=selected.filter(f=>!existingKeys.has(`${f.direction}:${f.flightId}`));
+    if(!fresh.length){ alert("선택한 편이 이미 이 TEAM에 등록되어 있어."); return; }
+    flightBoardStatus.textContent=`${team} TEAM에 ${fresh.length}편 등록 중...`;
+    const base=Date.now();
+    const docs=fresh.map((f,i)=>blankFlightMemo(base+i,team,savedAuthor,date,f.direction,f));
+    try{
+      await Promise.all(docs.map(d=>setDoc(doc(db,"memos",String(d.id)),d)));
+      if(activeTeamFilter===team){ docs.forEach(d=>memos.unshift(d)); renderList(); }
+      flightBoardStatus.textContent=`${team} TEAM 등록 완료: ${fresh.length}편${fresh.length!==selected.length?` (중복 ${selected.length-fresh.length}편 제외)`:""}`;
+      [...flightBoardList.querySelectorAll('.flightCheck:checked')].forEach(c=>c.checked=false);
+    }catch(error){
+      console.error("7C TEAM ASSIGN FAIL",error);
+      flightBoardStatus.textContent=`등록 실패: ${error?.message || error}`;
+      alert("TEAM 등록 실패");
+    }
+  }
+
+
   activeTeamFilter = mainTeam || "ALL";
   fillTeamOptions(activeTeamFilter);
   fillMainTeamOptions(mainTeam);
@@ -4263,7 +4550,12 @@
     openSchedule,
     closeSchedule,
     saveEquip,
-    saveMemo
+    saveMemo,
+    openFlightBoard,
+    closeFlightBoard,
+    load7CFlights,
+    selectAll7CFlights,
+    assignSelected7CFlights
   });
 
 </script>
