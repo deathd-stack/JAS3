@@ -5151,7 +5151,7 @@ body::before{
         <button type="button" class="flightDateToday" onclick="setFlightBoardDateToday()">TODAY</button>
       </div>
       <input id="flightSearchInput" class="flightSearch" placeholder="편명 검색 예: 7C2104 / IT602 / KN869 / AK1623" oninput="render7CFlights()">
-      <div class="flightHint" id="flightDateHint">선택한 날짜 전체 7C 편 조회 · 지난편도 함께 표시</div>
+      <div class="flightHint" id="flightDateHint">선택한 날짜 7C · IT · KN · AK 통합 조회 · 지난편도 함께 표시</div>
       <div class="flightBoardAssign">
         <select id="flightBoardTeamSelect"></select>
         <button type="button" onclick="assignSelected7CFlights()">선택편 TEAM 등록</button>
@@ -7830,7 +7830,7 @@ body::before{
   function refreshFlightDateUI(){
     flightBoardDate=normalizeFlightBoardDate(flightBoardDate);
     if(flightBoardDateInput) flightBoardDateInput.value=flightBoardDate;
-    if(flightDateHint) flightDateHint.textContent=`${flightBoardDate} 전체 7C 편 조회 · 지난편도 함께 표시`;
+    if(flightDateHint) flightDateHint.textContent=`${flightBoardDate} 7C · IT · KN · AK 통합 조회 · 지난편도 함께 표시`;
   }
 
   function changeFlightBoardDate(value){
