@@ -1,18 +1,11 @@
 {
-  "name": "JAGOS",
+  "id": "./",
+  "name": "JAGOS Team Operation",
   "short_name": "JAGOS",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000",
-  "icons": [
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  "background_color": "#08080b",
+  "theme_color": "#08080b",
+  "icons": [{"src":"./jagos-push-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]
 }
